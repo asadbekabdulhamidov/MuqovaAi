@@ -17,7 +17,15 @@ import {
   getAiImageUrl, 
   generateSvgFallback 
 } from './services/aiService';
-import { Sparkles, BookMarked, GraduationCap, ChevronDown } from 'lucide-react';
+import { 
+  Sparkles, 
+  BookMarked, 
+  GraduationCap, 
+  ArrowLeft, 
+  ArrowRight, 
+  PlusCircle, 
+  SlidersHorizontal 
+} from 'lucide-react';
 
 export function App() {
   // Boshlang'ich qiymat sifatida 1-namunadan foydalanamiz
@@ -51,10 +59,8 @@ export function App() {
 
   // Generatsiya qilingan variantlar ro'yxati
   const [variants, setVariants] = useState(() => {
-    // Dastlabki tayyor 3 ta muqobil variant
     const initialVariants = generateAlternativeVariants(formData);
     return initialVariants.map((v, i) => {
-      // 1-namuna rasmlari
       const mockImg = i === 0 
         ? defaultPreset.mockImages.minimalist 
         : i === 1 
@@ -80,20 +86,16 @@ export function App() {
     setIsGenerating(true);
 
     try {
-      // 1-bosqich
       setGenerationStep('1/4: Semantik annotatsiya va kitob parametrlari tahlil qilinmoqda...');
       await new Promise(r => setTimeout(r, 450));
 
-      // 2-bosqich
       setGenerationStep('2/4: 3 xil muqobil uslub (Tipografik, Illyustrativ, Konseptual) promptlari shakllantirilmoqda...');
       await new Promise(r => setTimeout(r, 450));
 
-      // 3-bosqich
       setGenerationStep('3/4: Bosmaxona o‘lchamlari va umurtqa qalinligi hisoblanmoqda...');
       const newVariants = generateAlternativeVariants(dataToUse);
       await new Promise(r => setTimeout(r, 400));
 
-      // 4-bosqich
       setGenerationStep('4/4: Neyrotarmoq orqali muqova kompozitsiyalari sintezlanmoqda...');
 
       const variantsWithImages = newVariants.map((v) => {
@@ -113,11 +115,9 @@ export function App() {
       setVariants(variantsWithImages);
       setActiveVariantIndex(0);
 
-      // Agar generator tabida bo'lsa, natijaga silliq tushiramiz
-      const resultsElement = document.getElementById('alternatives-section');
-      if (resultsElement) {
-        resultsElement.scrollIntoView({ behavior: 'smooth' });
-      }
+      // Natijalarni ko'rish uchun avtomatik "Muqobil Variantlar" tabiga o'tkazamiz!
+      setActiveTab('alternatives');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Generatsiya xatosi:', err);
     } finally {
@@ -175,7 +175,6 @@ export function App() {
     };
     setFormData(updated);
 
-    // Namunadagi oldindan tayyor rasmlarni yuklash
     const generated = generateAlternativeVariants(updated);
     const withImages = generated.map((v, i) => {
       const img = i === 0 
@@ -192,11 +191,28 @@ export function App() {
     setVariants(withImages);
     setActiveVariantIndex(0);
 
-    // Natijaga yo'naltirish
-    const el = document.getElementById('alternatives-section');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Namuna tanlanganda darhol natijalar vitrinasiga o'tamiz
+    setActiveTab('alternatives');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Yangi bo'sh forma boshlash
+  const handleStartNew = () => {
+    setFormData({
+      title: '',
+      author: '',
+      edition: '1-nashr',
+      genre: 'fiction',
+      synopsis: '',
+      style: 'minimalist',
+      palette: 'deep_mystery',
+      format: 'a5',
+      pages: 200,
+      paperWeight: 80,
+      isbn: '978-9943-' + Math.floor(100000 + Math.random() * 900000)
+    });
+    setActiveTab('generator');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -205,36 +221,25 @@ export function App() {
       <Navbar
         onOpenSettings={() => setIsSettingsOpen(true)}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       <main className="flex-1 pb-16">
-        {/* Ilmiy kirish va Prezentatsiya Hero bo'limi */}
-        <HeroSection
-          onSelectPreset={handleSelectPreset}
-          onStartNew={() => {
-            setFormData({
-              title: '',
-              author: '',
-              edition: '1-nashr',
-              genre: 'fiction',
-              synopsis: '',
-              style: 'minimalist',
-              palette: 'deep_mystery',
-              format: 'a5',
-              pages: 200,
-              paperWeight: 80,
-              isbn: '978-9943-' + Math.floor(100000 + Math.random() * 900000)
-            });
-            window.scrollTo({ top: 380, behavior: 'smooth' });
-          }}
-        />
+        {/* ========================================================
+            TAB 1: AI GENERATOR (Forma va Tayyor Namunalar)
+        ======================================================== */}
+        {activeTab === 'generator' && (
+          <div className="space-y-6 sm:space-y-10">
+            {/* Hero & Presets Section */}
+            <HeroSection
+              onSelectPreset={handleSelectPreset}
+              onStartNew={handleStartNew}
+            />
 
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 mt-5 sm:mt-10 space-y-6 sm:space-y-12">
-          
-          {/* Asosiy Ishchi Maydon: Forma va Natijalar */}
-          {(activeTab === 'generator' || activeTab === 'alternatives') && (
-            <div className="space-y-12">
+            <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 space-y-6">
               {/* Kitob ma'lumotlarini kiritish formasi */}
               <div id="generator-form-section">
                 <BookForm
@@ -246,25 +251,123 @@ export function App() {
                 />
               </div>
 
-              {/* Muqobil Variantlar Natijasi Vitrinasi */}
-              <div id="alternatives-section" className="pt-4 scroll-mt-24">
-                <AlternativesViewer
-                  variants={variants}
-                  activeVariantIndex={activeVariantIndex}
-                  setActiveVariantIndex={setActiveVariantIndex}
-                  bookData={formData}
-                  onRegenerateVariant={handleRegenerateVariant}
-                  isRegenerating={isRegenerating}
-                />
+              {/* Variantlarga o'tish tugmasi */}
+              {variants.length > 0 && (
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                      Mavjud muqobil variantlar tayyor ({variants.length} ta dizayn)
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      «{formData.title || 'Kitob'}» uchun yaratilgan 3D mockup va bosmaxona yoyilmalarini ko‘rish
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('alternatives');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-indigo-600/20"
+                  >
+                    <span>Muqobil Variantlarni Ko‘rish</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            TAB 2: MUQOBIL VARIANTLAR (Faqat Natijalar Vitrinasi)
+        ======================================================== */}
+        {activeTab === 'alternatives' && (
+          <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-5">
+            {/* Context Status Bar */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 uppercase tracking-wider">
+                    Faol Loyiha
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {(formData.format || 'A5').toUpperCase()} • {formData.pages} bet
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-white truncate max-w-lg">
+                  «{formData.title || 'Kitob'}» — <span className="text-slate-300 font-normal">{formData.author}</span>
+                </h2>
+              </div>
+
+              {/* Navigation Back / New Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    setActiveTab('generator');
+                    window.scrollTo({ top: 350, behavior: 'smooth' });
+                  }}
+                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Parametrlarni Tahrirlash</span>
+                </button>
+
+                <button
+                  onClick={handleStartNew}
+                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/30 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Yangi Kitob</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {/* Ilmiy Tadqiqot va Qiyosiy Tahlil Bo'limi */}
-          <div className={activeTab === 'research' ? 'block' : 'mt-16'}>
+            {/* Alternatives Viewer Component */}
+            <div id="alternatives-section">
+              <AlternativesViewer
+                variants={variants}
+                activeVariantIndex={activeVariantIndex}
+                setActiveVariantIndex={setActiveVariantIndex}
+                bookData={formData}
+                onRegenerateVariant={handleRegenerateVariant}
+                isRegenerating={isRegenerating}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            TAB 3: ILMIY ASOS & TAHLIL (Prezentatsiya va Himoya)
+        ======================================================== */}
+        {activeTab === 'research' && (
+          <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 uppercase tracking-wider">
+                  Ilmiy Himoya & Prezentatsiya
+                </span>
+                <h2 className="text-base sm:text-lg font-bold text-white mt-1">
+                  Tadqiqot Metodologiyasi va Ekspert Bahosi
+                </h2>
+              </div>
+
+              <button
+                onClick={() => {
+                  setActiveTab('generator');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Generatorga Qaytish</span>
+              </button>
+            </div>
+
             <ResearchSection />
           </div>
-        </div>
+        )}
       </main>
 
       {/* API Sozlamalari Modali */}
