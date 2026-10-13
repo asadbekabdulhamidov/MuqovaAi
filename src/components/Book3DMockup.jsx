@@ -15,7 +15,7 @@ export function Book3DMockup({
   const spineDepthPx = Math.max(24, Math.min(60, Math.round(spineWidthMm * 2.2)));
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 bg-slate-900/60 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
+    <div className="flex flex-col items-center justify-center p-3.5 sm:p-6 bg-slate-900/60 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
       {/* Background radial glow */}
       <div 
         className="absolute w-80 h-80 rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-700"
@@ -27,20 +27,20 @@ export function Book3DMockup({
       />
 
       {/* Control bar */}
-      <div className="w-full flex items-center justify-between mb-6 z-10">
+      <div className="w-full flex flex-col xs:flex-row items-center justify-between gap-3 mb-4 sm:mb-6 z-10">
         <div className="flex items-center gap-2">
-          <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
-          <span className="text-xs font-semibold text-slate-300 tracking-wider uppercase flex items-center gap-1.5">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-300 tracking-wider uppercase flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-indigo-400" />
             3D Interaktiv Mockup
           </span>
         </div>
 
         {/* Rotation quick presets */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-1.5 text-xs">
           <button
             onClick={() => { setRotateY(-32); setRotateX(8); }}
-            className={`px-2.5 py-1 rounded-md transition-all ${
+            className={`px-2 py-1 rounded-md transition-all text-[11px] ${
               rotateY === -32 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
@@ -48,26 +48,26 @@ export function Book3DMockup({
           </button>
           <button
             onClick={() => { setRotateY(0); setRotateX(0); }}
-            className={`px-2.5 py-1 rounded-md transition-all ${
+            className={`px-2 py-1 rounded-md transition-all text-[11px] ${
               rotateY === 0 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            To‘g‘ridan (2D)
+            2D
           </button>
           <button
             onClick={() => { setRotateY(-55); setRotateX(12); }}
-            className={`px-2.5 py-1 rounded-md transition-all ${
+            className={`px-2 py-1 rounded-md transition-all text-[11px] ${
               rotateY === -55 ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
-            Umurtqa (Spine)
+            Umurtqa
           </button>
         </div>
       </div>
 
       {/* 3D Scene Viewport */}
       <div 
-        className="w-full h-[460px] flex items-center justify-center perspective-1000 cursor-grab active:cursor-grabbing select-none"
+        className="w-full h-[360px] sm:h-[440px] flex items-center justify-center perspective-1000 cursor-grab active:cursor-grabbing select-none"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -76,8 +76,8 @@ export function Book3DMockup({
           className="relative transform-style-3d transition-transform duration-500 ease-out"
           style={{
             transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
-            width: '240px',
-            height: '350px'
+            width: '210px',
+            height: '310px'
           }}
         >
           {/* Front Cover */}

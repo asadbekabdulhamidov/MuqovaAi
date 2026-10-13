@@ -36,7 +36,7 @@ export function BookForm({
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl relative overflow-hidden">
+    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-3.5 sm:p-6 shadow-xl relative overflow-hidden">
       {/* Accent corner gradient */}
       <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
 

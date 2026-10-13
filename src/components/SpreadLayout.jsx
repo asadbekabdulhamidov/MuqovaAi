@@ -18,7 +18,11 @@ export function SpreadLayout({
   };
 
   return (
-    <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 flex flex-col gap-6">
+    <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-3.5 sm:p-6 flex flex-col gap-4 sm:gap-6">
+      {/* Mobile Swipe Hint */}
+      <div className="lg:hidden flex items-center justify-center gap-1.5 py-1 px-3 bg-indigo-950/60 rounded-lg border border-indigo-800/40 text-[11px] text-indigo-300 font-medium">
+        <span>👉 Yoyilmani to‘liq ko‘rish uchun gorizontal suring</span>
+      </div>
       {/* Header with technical print badges */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
         <div>

@@ -230,7 +230,7 @@ export function App() {
           }}
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10 space-y-12">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 mt-5 sm:mt-10 space-y-6 sm:space-y-12">
           
           {/* Asosiy Ishchi Maydon: Forma va Natijalar */}
           {(activeTab === 'generator' || activeTab === 'alternatives') && (
