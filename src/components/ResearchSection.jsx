@@ -54,9 +54,15 @@ export function ResearchSection() {
       {/* 1. Ilmiy ish haqida kirish banneri */}
       <div className="bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 rounded-2xl border border-indigo-800/40 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
         <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
-            <GraduationCap className="w-4 h-4 text-indigo-400" />
-            Ilmiy Tadqiqot Konsepsiyasi
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+              <GraduationCap className="w-4 h-4 text-indigo-400" />
+              Ilmiy Tadqiqot Konsepsiyasi
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+              <Award className="w-4 h-4 text-amber-400" />
+              Tadqiqotchi: Anvarova Xurshidabonu Xamidillayevna
+            </div>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">

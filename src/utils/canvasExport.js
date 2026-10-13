@@ -133,6 +133,7 @@ export function downloadPrintPassport(bookData, variant) {
   const passportContent = `================================================================================
 BOSMAXONA UCHUN KITOB MUQOVASINING TEXNIK PASPORTI
 "Kitob muqovasini Muqobil dizayn variantlarini tavsiya qiluvchi AI tizimi"
+Tadqiqotchi & Loyiha Muallifi: Anvarova Xurshidabonu Xamidillayevna
 ================================================================================
 
 1. UMUMIY MA'LUMOTLAR:

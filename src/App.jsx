@@ -380,22 +380,37 @@ export function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-600/30 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-              <BookMarked className="w-3.5 h-3.5" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600/30 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+              <BookMarked className="w-4 h-4" />
             </div>
-            <span className="text-slate-300 font-semibold">
-              MuqovaAI — Kitob muqovasining muqobil dizayn variantlarini tavsiya qiluvchi AI tizimi
-            </span>
+            <div>
+              <span className="text-slate-200 font-bold block text-sm">
+                MuqovaAI — Intellektual Muqova Dizayn Tizimi
+              </span>
+              <p className="text-[11px] text-slate-500 max-w-md">
+                «Kitob muqovasini Muqobil dizayn variantlarini tavsiya qiluvchi AI tizimini ishlab chiqish va tadqiq qilish»
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-slate-500 font-mono">
-            <span>Ilmiy-amaliy tadqiqot MVP</span>
-            <span>•</span>
-            <span>React & Tailwind CSS</span>
-            <span>•</span>
-            <span>2026</span>
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-center sm:text-right">
+            <div className="bg-indigo-950/70 border border-indigo-800/60 px-4 py-2 rounded-xl flex items-center gap-2.5 shadow-lg shadow-indigo-950/50">
+              <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
+              <div className="text-left">
+                <span className="text-[10px] text-indigo-300 font-mono uppercase tracking-wider block font-semibold">
+                  Tadqiqotchi & Loyiha Muallifi:
+                </span>
+                <span className="text-xs font-bold text-white tracking-wide">
+                  Anvarova Xurshidabonu Xamidillayevna
+                </span>
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-500 font-mono">
+              <span>Ilmiy MVP • 2026</span>
+            </div>
           </div>
         </div>
       </footer>
