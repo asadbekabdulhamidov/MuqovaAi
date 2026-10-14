@@ -28,17 +28,17 @@ export function generateAlternativeVariants(bookData) {
 
   // Eski muqova mavjud bo'lsa, AI ga uning modernizatsiya qilingan redesignini yaratish bo'yicha ko'rsatma beramiz
   const redesignContext = bookData.oldCoverImage
-    ? 'Complete modern book cover redesign and remaster of the previous edition: sophisticated contemporary typography, elevated aesthetic hierarchy, dynamic contrast, 300DPI publishing perfection. '
+    ? 'Modern remaster and visual redesign of previous book cover edition: '
     : '';
 
-  // Variant A: Tipografik & Minimalist
-  const promptA = `${redesignContext}Award-winning book cover, minimalist Swiss typography design for "${bookData.title}". Author "${bookData.author}". Theme: ${bookData.synopsis.slice(0, 150)}. Clean composition, single evocative central metaphor, ${palette.prompt}, high-end editorial book cover design, balanced negative space, sharp focus, 8k resolution, professional graphic publishing standard.`;
+  // Variant A: Tipografik & Minimalist (Toza fon, matn va harflarsiz)
+  const promptA = `${redesignContext}Award-winning minimalist book cover art, genre: ${bookData.genre}. Abstract central concept: ${bookData.title}, elegant modern composition, Swiss graphic design style, ${palette.prompt}, cinematic atmospheric lighting, hyper-detailed, 8k resolution, editorial masterpiece, clean aesthetic, no text, no words, no letters`;
 
-  // Variant B: Badiiy & Illyustrativ
-  const promptB = `${redesignContext}Stunning artistic illustrated book cover for "${bookData.title}". Story theme: ${bookData.synopsis.slice(0, 150)}. Rich detailed digital painting, genre: ${bookData.genre}, expressive characters and cinematic atmosphere, ${palette.prompt}, trending on ArtStation, evocative lighting, narrative depth, masterwork cover art.`;
+  // Variant B: Badiiy & Illyustrativ (Boy syujet, matnsiz)
+  const promptB = `${redesignContext}Masterpiece narrative digital illustration for a book cover, genre: ${bookData.genre}. Atmospheric visual storytelling inspired by ${bookData.title}, expressive cinematic mood, intricate details, trending on ArtStation, ${palette.prompt}, dramatic volumetric lighting, 8k, photorealistic octane render, no text, no typography`;
 
-  // Variant C: Konseptual & Ramziy (Simvolik)
-  const promptC = `${redesignContext}Conceptual avant-garde book cover art for "${bookData.title}". Metaphorical symbolism reflecting: ${bookData.synopsis.slice(0, 150)}. Abstract geometry, dramatic chiaroscuro lighting, deep philosophical duality, ${styleObj.promptStyle}, ${palette.prompt}, sophisticated visual poetry, modern gallery aesthetic.`;
+  // Variant C: Konseptual & Ramziy (Simvolik, no text)
+  const promptC = `${redesignContext}Deep philosophical avant-garde book cover art, genre: ${bookData.genre}. Symbolic surrealism representing ${bookData.title}, ${styleObj.promptStyle}, ${palette.prompt}, chiaroscuro dramatic contrast, gallery fine art exhibition standard, sophisticated visual metaphor, 8k resolution, masterpiece, no text`;
 
   return [
     {
@@ -226,12 +226,9 @@ export const DEFAULT_FALLBACK_IMAGES = [
 ];
 
 /**
- * Rasm URL manzilini yaratish (Pollinations tezkor modeli yoki Custom API)
+ * Rasm URL manzilini yaratish (FLUX modeli orqali Pollinations)
  */
 export function getAiImageUrl(prompt, seed, width = 500, height = 750, apiKey = '', provider = 'pollinations') {
-  if (provider === 'pollinations' || !apiKey) {
-    const cleanPrompt = encodeURIComponent(prompt.trim().slice(0, 160));
-    return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
-  }
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
+  const cleanPrompt = encodeURIComponent(prompt.trim());
+  return `https://image.pollinations.ai/prompt/${cleanPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`;
 }
