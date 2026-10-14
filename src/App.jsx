@@ -30,7 +30,7 @@ import {
 /**
  * Tasvirni neyrotarmoqdan yuklab olinishini xavfsiz kutuvchi yordamchi funksiya
  */
-function preloadImageWithTimeout(url, timeoutMs = 18000) {
+function preloadImageWithTimeout(url, timeoutMs = 32000) {
   return new Promise((resolve) => {
     const img = new Image();
     const timer = setTimeout(() => {
@@ -167,6 +167,7 @@ export function App() {
 
       // 2. Ketma-ket (bitta-bitta) neyrotarmoqdan yuklash navbati (Pipeline)
       // Pollinations serveriga bir vaqtda faqat 1 ta so'rov yuboriladi
+      // Har bir variantni ketma-ket, tartib bilan generatsiya qilamiz
       (async () => {
         for (let i = 0; i < newVariants.length; i++) {
           // Ushbu variantni aktiv generatsiya holatiga o'tkazamiz
@@ -179,10 +180,31 @@ export function App() {
           });
 
           const v = newVariants[i];
-          const aiUrl = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
+          let chosenUrl = v.fallbackUrl;
 
-          // Neyrotarmoq rasm chizib bo'lishini kutamiz (boshqa so'rov yubormasdan)
-          const isSuccess = await preloadImageWithTimeout(aiUrl, 18000);
+          if (settings.provider === 'offline') {
+            chosenUrl = v.fallbackUrl;
+          } else {
+            const fluxUrl = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
+            // 1-bosqich: FLUX modeli (25 soniya kutamiz)
+            const isFluxSuccess = await preloadImageWithTimeout(fluxUrl, 25000);
+
+            if (isFluxSuccess) {
+              chosenUrl = fluxUrl;
+            } else {
+              // 2-bosqich: FLUX band bo'lsa yoki server cheklov qo'ysa, tezkor Turbo AI modeliga o'tamiz
+              const cleanPrompt = encodeURIComponent(v.prompt.trim());
+              const fastAiUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=500&height=750&seed=${v.seed}&nologo=true`;
+              const isFastSuccess = await preloadImageWithTimeout(fastAiUrl, 12000);
+
+              if (isFastSuccess) {
+                chosenUrl = fastAiUrl;
+              } else {
+                // 3-bosqich: Agar internet umuman bo'lmasa, SVG zaxira
+                chosenUrl = v.fallbackUrl;
+              }
+            }
+          }
 
           // Rasm tayyor bo'lgach, uni o'z o'rniga joylaymiz
           setVariants(prev => {
@@ -190,15 +212,15 @@ export function App() {
             if (next[i]) {
               next[i] = {
                 ...next[i],
-                imageUrl: isSuccess ? aiUrl : next[i].fallbackUrl,
+                imageUrl: chosenUrl,
                 loadingStatus: 'ready'
               };
             }
             return next;
           });
 
-          // Server keyingi so'rovni qabul qilishi uchun 600ms tanaffus
-          await new Promise(r => setTimeout(r, 600));
+          // Server keyingi so'rovda rate limit bermasligi uchun 2000ms tanaffus
+          await new Promise(r => setTimeout(r, 2000));
         }
       })();
 
@@ -225,14 +247,21 @@ export function App() {
       const current = variants[index];
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
       const fallback = generateSvgFallback(formData.title, formData.author, current.id, current.title);
-      let newUrl;
+      let newUrl = fallback;
 
-      if (settings.provider === 'offline') {
-        newUrl = fallback;
-      } else {
-        newUrl = getAiImageUrl(current.prompt, newSeed, 500, 750, settings.apiKey, settings.provider);
-        const isSuccess = await preloadImageWithTimeout(newUrl, 18000);
-        if (!isSuccess) newUrl = fallback;
+      if (settings.provider !== 'offline') {
+        const fluxUrl = getAiImageUrl(current.prompt, newSeed, 500, 750, settings.apiKey, settings.provider);
+        const isFluxSuccess = await preloadImageWithTimeout(fluxUrl, 25000);
+        if (isFluxSuccess) {
+          newUrl = fluxUrl;
+        } else {
+          const cleanPrompt = encodeURIComponent(current.prompt.trim());
+          const fastAiUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=500&height=750&seed=${newSeed}&nologo=true`;
+          const isFastSuccess = await preloadImageWithTimeout(fastAiUrl, 12000);
+          if (isFastSuccess) {
+            newUrl = fastAiUrl;
+          }
+        }
       }
 
       setVariants(prev => {

@@ -701,8 +701,13 @@ export function CoverAiV2({
                         alt={formData.title}
                         referrerPolicy="no-referrer"
                         onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                          const currentSrc = e.currentTarget.src || '';
+                          if (currentSrc.includes('model=flux')) {
+                            e.currentTarget.src = currentSrc.replace(/model=flux&?|&model=flux/g, '');
+                          } else {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                          }
                         }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -819,8 +824,13 @@ export function CoverAiV2({
                   alt="Variant 1"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0];
+                    const currentSrc = e.currentTarget.src || '';
+                    if (currentSrc.includes('model=flux')) {
+                      e.currentTarget.src = currentSrc.replace(/model=flux&?|&model=flux/g, '');
+                    } else {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0];
+                    }
                   }}
                   className="w-full h-full object-cover"
                 />
@@ -874,8 +884,13 @@ export function CoverAiV2({
                   alt="Variant 2"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1];
+                    const currentSrc = e.currentTarget.src || '';
+                    if (currentSrc.includes('model=flux')) {
+                      e.currentTarget.src = currentSrc.replace(/model=flux&?|&model=flux/g, '');
+                    } else {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1];
+                    }
                   }}
                   className="w-full h-full object-cover"
                 />
@@ -929,8 +944,13 @@ export function CoverAiV2({
                   alt="Variant 3"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2];
+                    const currentSrc = e.currentTarget.src || '';
+                    if (currentSrc.includes('model=flux')) {
+                      e.currentTarget.src = currentSrc.replace(/model=flux&?|&model=flux/g, '');
+                    } else {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2];
+                    }
                   }}
                   className="w-full h-full object-cover"
                 />

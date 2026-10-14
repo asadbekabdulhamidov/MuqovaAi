@@ -229,8 +229,13 @@ export function AlternativesViewer({
                   alt={bookData.title}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = activeVariant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length];
+                    const currentSrc = e.currentTarget.src || '';
+                    if (currentSrc.includes('model=flux')) {
+                      e.currentTarget.src = currentSrc.replace(/model=flux&?|&model=flux/g, '');
+                    } else {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = activeVariant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length];
+                    }
                   }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
