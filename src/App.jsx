@@ -75,7 +75,10 @@ export function App() {
     format: defaultPreset.format,
     pages: defaultPreset.pages,
     paperWeight: defaultPreset.paperWeight,
-    isbn: defaultPreset.isbn
+    isbn: defaultPreset.isbn,
+    oldCoverImage: null,
+    oldCoverName: '',
+    oldCoverSize: ''
   });
 
   const [settings, setSettings] = useState(() => {
@@ -312,7 +315,10 @@ export function App() {
       format: 'a5',
       pages: 200,
       paperWeight: 80,
-      isbn: '978-9943-' + Math.floor(100000 + Math.random() * 900000)
+      isbn: '978-9943-' + Math.floor(100000 + Math.random() * 900000),
+      oldCoverImage: null,
+      oldCoverName: '',
+      oldCoverSize: ''
     });
     setActiveTab('generator');
     window.scrollTo({ top: 0, behavior: 'smooth' });

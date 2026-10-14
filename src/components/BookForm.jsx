@@ -12,7 +12,10 @@ import {
   Check, 
   Wand2, 
   Loader2,
-  Bookmark
+  Bookmark,
+  Upload,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { 
   BOOK_FORMATS, 
@@ -29,10 +32,53 @@ export function BookForm({
   isGenerating, 
   generationStep 
 }) {
+  const [uploadError, setUploadError] = useState('');
   const spineWidth = calculateSpineWidth(formData.pages, formData.paperWeight);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleOldCoverUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError('');
+
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Fayl hajmi 2MB dan oshmasligi kerak! Iltimos, kichikroq hajmdagi rasm yuklang.');
+      e.target.value = '';
+      return;
+    }
+
+    const validExts = ['png', 'jpg', 'jpeg', 'webp', 'avif'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!validExts.includes(ext)) {
+      setUploadError('Faqat PNG, JPG, WebP yoki AVIF formatidagi rasmlar qabul qilinadi!');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData(prev => ({
+        ...prev,
+        oldCoverImage: event.target.result,
+        oldCoverName: file.name,
+        oldCoverSize: (file.size / 1024).toFixed(0) + ' KB'
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveOldCover = () => {
+    setFormData(prev => ({
+      ...prev,
+      oldCoverImage: null,
+      oldCoverName: '',
+      oldCoverSize: ''
+    }));
+    setUploadError('');
   };
 
   return (
@@ -143,6 +189,75 @@ export function BookForm({
             placeholder="Kitob nima haqida, undagi asosiy mavzu, qahramonlar yoki ilmiy g‘oyalar nimalardan iborat ekanligini yozing..."
             className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none"
           />
+        </div>
+
+        {/* Eski muqova rasmini yuklash (Redesign uchun) */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Eski versiyadagi muqova rasmi (Redesign uchun)</span>
+            </label>
+            <span className="text-[10px] text-slate-400 font-mono">Ixtiyoriy • max 2MB (PNG, JPG, WebP, AVIF)</span>
+          </div>
+
+          {formData.oldCoverImage ? (
+            <div className="relative rounded-2xl border-2 border-indigo-500/40 bg-slate-800/90 p-3.5 flex items-center gap-3.5">
+              <div className="w-14 h-20 rounded-lg overflow-hidden bg-slate-900 border border-indigo-500/40 shrink-0 shadow-md">
+                <img
+                  src={formData.oldCoverImage}
+                  alt="Eski muqova"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                    Eski muqova
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">{formData.oldCoverSize || '< 2MB'}</span>
+                </div>
+                <p className="text-xs font-bold text-white truncate">{formData.oldCoverName || 'eski-muqova.png'}</p>
+                <p className="text-[11px] text-emerald-400 font-medium mt-0.5">
+                  ✓ AI ushbu eski muqovani tahlil qilib, yangilangan zamonaviy muqobil variantlarni yaratadi
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveOldCover}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
+                title="O‘chirish"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500 hover:bg-slate-800/50 rounded-2xl p-4 cursor-pointer transition-all text-center group">
+                <input
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,.avif,image/png,image/jpeg,image/webp,image/avif"
+                  onChange={handleOldCoverUpload}
+                  className="hidden"
+                />
+                <div className="w-9 h-9 rounded-xl bg-slate-800 group-hover:bg-indigo-600/30 flex items-center justify-center text-slate-400 group-hover:text-indigo-400 transition-colors mb-2">
+                  <Upload className="w-4 h-4" />
+                </div>
+                <p className="text-xs font-semibold text-slate-300 group-hover:text-white">
+                  Eski muqovani yuklash (PNG, JPG, WebP, AVIF)
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Fayl hajmi 2MB gacha • AI eski dizaynni zamonaviy uslubga yangilaydi
+                </p>
+              </label>
+              {uploadError && (
+                <div className="flex items-center gap-1.5 text-xs text-rose-400 mt-1.5 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 4. Dizayn Uslublari (Design Style Grid) */}

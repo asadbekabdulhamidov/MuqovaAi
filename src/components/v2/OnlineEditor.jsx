@@ -31,6 +31,7 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
   const [saturation, setSaturation] = useState(100);
 
   const [appliedNotification, setAppliedNotification] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Yuqori formadagi o'zgarishlar bilan darhol avtomatik sinxronlash
   useEffect(() => {
@@ -125,6 +126,21 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {bookData?.oldCoverImage && (
+            <button
+              type="button"
+              onClick={() => setShowComparison(prev => !prev)}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                showComparison
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{showComparison ? 'Yagona ko‘rinish' : 'Eski bilan taqqoslash'}</span>
+            </button>
+          )}
+
           <button
             onClick={handleResetFilters}
             className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-1.5"
@@ -152,8 +168,29 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* CHAP TOMON: Real vaqtda tahrirlanuvchi muqova preview kanvasi */}
-        <div className="lg:col-span-7 flex justify-center">
+        <div className="lg:col-span-7 flex flex-col sm:flex-row items-center justify-center gap-4">
+          
+          {/* Agar solishtirish rejimi yoqilgan bo'lsa va eski muqova bo'lsa */}
+          {showComparison && bookData?.oldCoverImage && (
+            <div className="w-full max-w-[260px] aspect-[1/1.42] rounded-xl overflow-hidden shadow-lg border-2 border-amber-300 relative bg-slate-900 group shrink-0">
+              <img
+                src={bookData.oldCoverImage}
+                alt="Eski versiya"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-3 left-3 px-2 py-0.5 rounded bg-amber-500 text-white text-[9px] font-bold shadow uppercase tracking-wider">
+                Eski versiya (Oldingi)
+              </div>
+            </div>
+          )}
+
           <div className="relative w-full max-w-[320px] aspect-[1/1.42] rounded-xl overflow-hidden shadow-xl border border-slate-200 group bg-slate-900 select-none">
+            {/* Top badge if comparison is active */}
+            {showComparison && bookData?.oldCoverImage && (
+              <div className="absolute top-3 left-3 z-30 px-2 py-0.5 rounded bg-indigo-600 text-white text-[9px] font-bold shadow uppercase tracking-wider">
+                Yangi AI Redesign
+              </div>
+            )}
             
             {/* Rasm (CSS filtrlari bilan jonli o'zgaradi) */}
             <img
