@@ -30,7 +30,7 @@ export function AlternativesViewer({
   const activeVariant = variants[activeVariantIndex] || variants[0];
 
   const handleDownloadCover = () => {
-    downloadCoverAsPng(bookData, activeVariant, activeVariant.imageUrl);
+    downloadCoverAsPng(bookData, activeVariant, activeVariant.imageUrl || activeVariant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length]);
   };
 
   const handleDownloadPassport = () => {

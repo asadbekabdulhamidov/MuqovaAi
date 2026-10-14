@@ -1,5 +1,79 @@
+import { generateSvgFallback } from '../services/aiService';
+
 /**
- * Muqovani yuqori aniqlikda (PNG) eksport qilish
+ * Xavfsiz Blob yuklab olish funksiyasi (Chrome, Safari va Firefox xavfsizlik cheklovlariga 100% mos)
+ * Linkni to'g'ri DOM ga biriktiradi va yuklangach xotirani tozalaydi.
+ */
+export function triggerBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.style.display = 'none';
+  link.download = filename;
+  link.href = url;
+  
+  // DOM ga qo'shish shart (brauzer "Download blocked" qilmasligi uchun)
+  document.body.appendChild(link);
+  link.click();
+
+  // 1 soniyadan so'ng xotirani tozalash
+  setTimeout(() => {
+    try {
+      if (link.parentNode) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // ignore
+    }
+  }, 1000);
+}
+
+/**
+ * Favqulodda to'g'ridan-to'g'ri yuklab olish (hech qachon target="_blank" ochmaydi)
+ */
+async function fallbackDirectDownload(imageUrl, bookData, variant) {
+  const safeTitle = (bookData?.title || 'kitob').replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
+  const filename = `${safeTitle}_muqova_${variant?.id || 'dizayn'}.png`;
+
+  try {
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      const resp = await fetch(imageUrl);
+      const blob = await resp.blob();
+      triggerBlobDownload(blob, `${safeTitle}_muqova.svg`);
+      return;
+    }
+
+    if (imageUrl) {
+      const resp = await fetch(imageUrl, { mode: 'cors' });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        triggerBlobDownload(blob, filename);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Fallback direct download network error, generating clean vector SVG blob', e);
+  }
+
+  // Eng oxirgi 100% kafolat: mahalliy SVG ni Blob qilib yuklash
+  try {
+    const svgData = generateSvgFallback(
+      bookData?.title || 'Kitob Nomi',
+      bookData?.author || 'Muallif',
+      variant?.id || 'variant_a',
+      variant?.title || 'Muqobil Variant'
+    );
+    const resp = await fetch(svgData);
+    const blob = await resp.blob();
+    triggerBlobDownload(blob, `${safeTitle}_muqova.svg`);
+  } catch (finalErr) {
+    console.error('Final download fallback failed:', finalErr);
+  }
+}
+
+/**
+ * Muqovani yuqori aniqlikda (PNG Blob) eksport qilish
+ * Canvas tainting xatosini oldini olish uchun tasvirni Blob orqali xavfsiz chizadi.
  */
 export async function downloadCoverAsPng(bookData, variant, imageUrl) {
   try {
@@ -15,29 +89,74 @@ export async function downloadCoverAsPng(bookData, variant, imageUrl) {
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. Rasm yuklash
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+    let imgElement = null;
+    const isDataUri = imageUrl && imageUrl.startsWith('data:');
 
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => {
-        // Fallback: agar rasm CORS xatolik bersa, gradient chiziladi
-        resolve();
-      };
-      img.src = imageUrl;
-    });
+    if (isDataUri) {
+      try {
+        const svgImg = new Image();
+        await new Promise((resolve) => {
+          svgImg.onload = resolve;
+          svgImg.onerror = resolve;
+          svgImg.src = imageUrl;
+        });
+        if (svgImg.complete && svgImg.naturalWidth > 0) {
+          imgElement = svgImg;
+        }
+      } catch (e) {
+        console.warn('SVG data-uri render warning', e);
+      }
+    } else if (imageUrl) {
+      // Tashqi URL (Pollinations yoki Unsplash):
+      // Brauzer keshidagi tainting xatoliklarini oldini olish uchun
+      // tasvirni avval xavfsiz Blob ko'rinishida olamiz
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
 
-    if (img.complete && img.naturalWidth > 0) {
-      // Rasm chizish
-      ctx.drawImage(img, 0, 0, width, height);
+        const response = await fetch(imageUrl, {
+          mode: 'cors',
+          cache: 'default',
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const blob = await response.blob();
+          const localBlobUrl = URL.createObjectURL(blob);
+          const blobImg = new Image();
+          await new Promise((resolve) => {
+            blobImg.onload = () => {
+              imgElement = blobImg;
+              resolve();
+            };
+            blobImg.onerror = resolve;
+            blobImg.src = localBlobUrl;
+          });
+          setTimeout(() => URL.revokeObjectURL(localBlobUrl), 2000);
+        }
+      } catch (fetchErr) {
+        console.warn('Could not fetch external image with CORS, fallback to vector canvas', fetchErr);
+      }
+    }
+
+    // 2. Fon tasvirini chizish
+    if (imgElement) {
+      ctx.drawImage(imgElement, 0, 0, width, height);
     } else {
-      // Gradient fon
+      // Chiroyli gradient va naqshli fon
       const grad = ctx.createLinearGradient(0, 0, width, height);
-      grad.addColorStop(0, '#1e1b4b');
-      grad.addColorStop(0.5, '#312e81');
-      grad.addColorStop(1, '#0f172a');
+      grad.addColorStop(0, '#0f172a');
+      grad.addColorStop(0.5, '#1e1b4b');
+      grad.addColorStop(1, '#312e81');
       ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Radial yorug'lik nuri
+      const radial = ctx.createRadialGradient(width / 2, height / 2.5, 50, width / 2, height / 2.5, 500);
+      radial.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+      radial.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      ctx.fillStyle = radial;
       ctx.fillRect(0, 0, width, height);
     }
 
@@ -58,24 +177,23 @@ export async function downloadCoverAsPng(bookData, variant, imageUrl) {
     // 5. Nashr belgisi (Badge)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.beginPath();
-    ctx.roundRect(100, 100, 220, 50, 10);
+    ctx.roundRect(100, 100, 260, 50, 10);
     ctx.fill();
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText((bookData.edition || '1-nashr').toUpperCase(), 120, 133);
+    ctx.fillText((bookData?.edition || '1-nashr').toUpperCase(), 120, 133);
 
     // 6. Muallif
     ctx.fillStyle = '#fde68a';
     ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText((bookData.author || 'Muallif').toUpperCase(), 100, 220);
+    ctx.fillText((bookData?.author || 'Muallif').toUpperCase(), 100, 220);
 
     // 7. Sarlavha (Title)
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 72px "Playfair Display", serif';
+    ctx.font = 'bold 72px "Playfair Display", Georgia, serif';
     
-    // Sarlavhani ko'p qatorli qilib chizish
-    const words = (bookData.title || 'Kitob Nomi').split(' ');
+    const words = (bookData?.title || 'Kitob Nomi').split(' ');
     let line = '';
     let y = height - 420;
     const maxWidth = width - 240;
@@ -100,28 +218,32 @@ export async function downloadCoverAsPng(bookData, variant, imageUrl) {
     // 8. Qisqacha annotatsiya
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.font = '24px "Plus Jakarta Sans", sans-serif';
-    const synWords = (bookData.synopsis || '').slice(0, 140);
-    ctx.fillText(synWords + '...', 100, y + 75);
+    const synWords = (bookData?.synopsis || '').slice(0, 140);
+    if (synWords) {
+      ctx.fillText(synWords + '...', 100, y + 75);
+    }
 
     // 9. Pastki ma'lumotlar
     ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.font = '20px monospace';
-    ctx.fillText(`FORMAT: ${(bookData.format || 'A5').toUpperCase()} | BOSMAXONA: 300 DPI`, 100, height - 100);
+    ctx.fillText(`FORMAT: ${(bookData?.format || 'A5').toUpperCase()} | BOSMAXONA: 300 DPI`, 100, height - 100);
     ctx.fillText(`AI MUQOBIL DIZAYN TIZIMI`, width - 420, height - 100);
 
-    // PNG Yuklab olish
-    const link = document.createElement('a');
-    link.download = `${(bookData.title || 'kitob').replace(/\s+/g, '_')}_muqova_${variant?.id || 'dizayn'}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    // 10. Xavfsiz PNG Blob orqali yuklab olish
+    const safeTitle = (bookData?.title || 'kitob').replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
+    const filename = `${safeTitle}_muqova_${variant?.id || 'dizayn'}.png`;
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        triggerBlobDownload(blob, filename);
+      } else {
+        fallbackDirectDownload(imageUrl, bookData, variant);
+      }
+    }, 'image/png');
+
   } catch (err) {
     console.error('Muqovani yuklab olishda xatolik:', err);
-    // Zaxira yuklash
-    const link = document.createElement('a');
-    link.download = `${(bookData.title || 'kitob')}_muqova.jpg`;
-    link.href = imageUrl;
-    link.target = '_blank';
-    link.click();
+    fallbackDirectDownload(imageUrl, bookData, variant);
   }
 }
 
@@ -138,36 +260,36 @@ Tadqiqotchi & Loyiha Muallifi: Anvarova Xurshidabonu Xamidillayevna
 
 1. UMUMIY MA'LUMOTLAR:
 --------------------------------------------------------------------------------
-Kitob nomi:           ${bookData.title}
-Muallif:              ${bookData.author}
-Nashr:                ${bookData.edition || '1-nashr'}
-Janr:                 ${bookData.genre}
+Kitob nomi:           ${bookData?.title}
+Muallif:              ${bookData?.author}
+Nashr:                ${bookData?.edition || '1-nashr'}
+Janr:                 ${bookData?.genre}
 Tanlangan variant:    ${variant?.title} (${variant?.styleName})
-ISBN raqami:          ${bookData.isbn || '978-9943-01-845-2'}
+ISBN raqami:          ${bookData?.isbn || '978-9943-01-845-2'}
 Tizim tavsiyasi:      ${variant?.rationale}
 
 2. GEOMETRIK VA POLIGRAFIK O'LCHAMLAR:
 --------------------------------------------------------------------------------
-Format:               ${(bookData.format || 'a5').toUpperCase()}
-Sof o'lcham (Trim):   ${specs.widthMm} mm × ${specs.heightMm} mm
-Umurtqa qalinligi:    ${specs.spineMm} mm (Sahifalar soni: ${bookData.pages} bet)
-Kesim chegarasi:      ${specs.bleedMm} mm (Har 4 tomondan qo'shimcha fon)
-Yoyilma to'liq eni:   ${specs.totalSpreadWidthMm} mm
-Yoyilma to'liq bo'yi: ${specs.totalSpreadHeightMm} mm
+Format:               ${(bookData?.format || 'a5').toUpperCase()}
+Sof o'lcham (Trim):   ${specs.widthMm || 148} mm × ${specs.heightMm || 210} mm
+Umurtqa qalinligi:    ${specs.spineMm || 14} mm (Sahifalar soni: ${bookData?.pages || 200} bet)
+Kesim chegarasi:      ${specs.bleedMm || 3} mm (Har 4 tomondan qo'shimcha fon)
+Yoyilma to'liq eni:   ${specs.totalSpreadWidthMm || 316} mm
+Yoyilma to'liq bo'yi: ${specs.totalSpreadHeightMm || 216} mm
 Rezolyutsiya:         ${specs.dpi || 300} DPI (Minimal tavsiya)
 
 3. BOSMA VA MATERIALLAR TAVSIYASI:
 --------------------------------------------------------------------------------
 Rang modeli:          ${specs.colorSpace || 'CMYK (ISO Coated v2)'}
 Muqova qog'ozi:       Karton / Bo'rli qog'oz (250-300 g/m²)
-Blok qog'ozi:         ${bookData.paperWeight || 80} g/m² Ofset qog'oz
+Blok qog'ozi:         ${bookData?.paperWeight || 80} g/m² Ofset qog'oz
 Pardozlash turi:      ${variant?.recommendedFinish || 'Matviy laminatsiya + Spot UV'}
 Xavfsiz matn zonasi:  Kesim chizig'idan kamida 5 mm ichkarida
 
 4. AI PROMPT MUHANDISLIGI TAFSILOTLARI:
 --------------------------------------------------------------------------------
-Prompt: ${variant?.prompt}
-Rang psixologiyasi: ${variant?.colorLogic}
+Prompt: ${variant?.prompt || 'N/A'}
+Rang psixologiyasi: ${variant?.colorLogic || 'N/A'}
 
 ================================================================================
 Generatsiya sanasi:   ${new Date().toLocaleString('uz-UZ')}
@@ -175,10 +297,6 @@ Tizim versiyasi:      AI BookCover Pro MVP v1.0
 ================================================================================`;
 
   const blob = new Blob([passportContent], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.download = `${(bookData.title || 'kitob').replace(/\s+/g, '_')}_Bosmaxona_Pasporti.txt`;
-  link.href = url;
-  link.click();
-  URL.revokeObjectURL(url);
+  const safeTitle = (bookData?.title || 'kitob').replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
+  triggerBlobDownload(blob, `${safeTitle}_Bosmaxona_Pasporti.txt`);
 }
