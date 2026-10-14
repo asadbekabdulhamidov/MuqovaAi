@@ -20,7 +20,10 @@ import {
   Clock,
   Upload,
   X,
-  AlertCircle
+  AlertCircle,
+  Maximize2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { 
   BOOK_FORMATS, 
@@ -47,7 +50,78 @@ export function CoverAiV2({
 }) {
   const [activeSubTab, setActiveSubTab] = useState('create'); // 'home' | 'create' | 'results' | 'editor'
   const [uploadError, setUploadError] = useState('');
+  const [lightboxData, setLightboxData] = useState(null);
   const activeVariant = variants[activeVariantIndex] || variants[0];
+
+  // Katta ekranda (Lightbox) ko'rish funksiyalari
+  const handleOpenLightbox = (index) => {
+    const v = variants[index];
+    if (!v) return;
+    setLightboxData({
+      isOld: false,
+      index,
+      title: v.title,
+      conceptBadge: v.conceptBadge,
+      imageUrl: v.imageUrl || v.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length],
+      author: formData.author,
+      bookTitle: formData.title
+    });
+  };
+
+  const handleOpenOldCoverLightbox = () => {
+    if (!formData.oldCoverImage) return;
+    setLightboxData({
+      isOld: true,
+      index: -1,
+      title: 'Eski Muqova (Asl nusxa)',
+      conceptBadge: 'Asl namuna',
+      imageUrl: formData.oldCoverImage,
+      author: formData.author,
+      bookTitle: formData.title
+    });
+  };
+
+  const handlePrevLightbox = () => {
+    if (!lightboxData) return;
+    if (lightboxData.isOld) {
+      handleOpenLightbox(variants.length - 1);
+    } else if (lightboxData.index === 0) {
+      if (formData.oldCoverImage) {
+        handleOpenOldCoverLightbox();
+      } else {
+        handleOpenLightbox(variants.length - 1);
+      }
+    } else {
+      handleOpenLightbox(lightboxData.index - 1);
+    }
+  };
+
+  const handleNextLightbox = () => {
+    if (!lightboxData) return;
+    if (lightboxData.isOld) {
+      handleOpenLightbox(0);
+    } else if (lightboxData.index === variants.length - 1) {
+      if (formData.oldCoverImage) {
+        handleOpenOldCoverLightbox();
+      } else {
+        handleOpenLightbox(0);
+      }
+    } else {
+      handleOpenLightbox(lightboxData.index + 1);
+    }
+  };
+
+  // Klaviaturadagi Escape va chap/o'ng tugmalar orqali lightbox boshqaruvi
+  React.useEffect(() => {
+    if (!lightboxData) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setLightboxData(null);
+      if (e.key === 'ArrowLeft') handlePrevLightbox();
+      if (e.key === 'ArrowRight') handleNextLightbox();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxData, variants, formData.oldCoverImage]);
 
   // Eski muqova faylini yuklash va 2MB/format tekshirish
   const handleOldCoverUpload = (e) => {
@@ -594,11 +668,15 @@ export function CoverAiV2({
           {formData.oldCoverImage && (
             <div className="bg-amber-50/40 rounded-2xl border-2 border-amber-300 p-3 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-3 relative group">
               {/* 2:3 Vertical Old Cover Artwork */}
-              <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-amber-200 shadow-inner">
+              <div 
+                onClick={handleOpenOldCoverLightbox}
+                className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-amber-200 shadow-inner cursor-pointer group/cover"
+                title="Katta ekranda ko‘rish uchun bosing"
+              >
                 <img
                   src={formData.oldCoverImage}
                   alt="Eski versiya muqovasi"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 p-4 flex flex-col justify-between pointer-events-none">
                   <span className="self-start text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white uppercase tracking-wider shadow">
@@ -610,6 +688,14 @@ export function CoverAiV2({
                     </h3>
                     <p className="text-[11px] text-amber-300 font-medium">{formData.author}</p>
                   </div>
+                </div>
+
+                {/* Hover overlay hint */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/cover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                  <span className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold shadow-xl flex items-center gap-1.5 backdrop-blur-sm transform translate-y-2 group-hover/cover:translate-y-0 transition-transform">
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-600" />
+                    Katta ekranda ko‘rish
+                  </span>
                 </div>
               </div>
 
@@ -665,7 +751,13 @@ export function CoverAiV2({
                 }`}
               >
                 {/* 2:3 Vertical Cover Artwork */}
-                <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group">
+                <div 
+                  onClick={() => isReady && handleOpenLightbox(index)}
+                  className={`relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group/cover ${
+                    isReady ? 'cursor-pointer' : ''
+                  }`}
+                  title={isReady ? "Katta ekranda ko‘rish uchun bosing" : ""}
+                >
                   {isGeneratingThis ? (
                     <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950">
                       <div className="relative mb-4">
@@ -709,9 +801,9 @@ export function CoverAiV2({
                             e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
                           }
                         }}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover/cover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 p-4 flex flex-col justify-between">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 p-4 flex flex-col justify-between pointer-events-none">
                         <span className="self-start text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md uppercase tracking-wider">
                           {variant.conceptBadge}
                         </span>
@@ -721,6 +813,14 @@ export function CoverAiV2({
                           </h3>
                           <p className="text-[11px] text-amber-300 font-medium">{formData.author}</p>
                         </div>
+                      </div>
+
+                      {/* Hover overlay hint */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/cover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                        <span className="px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-xs font-bold shadow-xl flex items-center gap-1.5 backdrop-blur-sm transform translate-y-2 group-hover/cover:translate-y-0 transition-transform">
+                          <Maximize2 className="w-3.5 h-3.5 text-indigo-600" />
+                          Katta ekranda ko‘rish
+                        </span>
                       </div>
                     </>
                   )}
@@ -983,6 +1083,9 @@ export function CoverAiV2({
         <OnlineEditor
           bookData={formData}
           variant={activeVariant}
+          variants={variants}
+          activeVariantIndex={activeVariantIndex}
+          onSelectVariant={(idx) => setActiveVariantIndex(idx)}
           onSaveEdits={(edits) => {
             setFormData(prev => ({
               ...prev,
@@ -993,6 +1096,131 @@ export function CoverAiV2({
         />
       </section>
 
+      {/* ========================================================
+          FULLSCREEN LIGHTBOX MODAL (Katta ekranda ko'rish)
+      ======================================================== */}
+      {lightboxData && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn select-none"
+          onClick={() => setLightboxData(null)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setLightboxData(null)}
+            className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all shadow-lg backdrop-blur-sm"
+            title="Yopish (Esc)"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Previous Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrevLightbox();
+            }}
+            className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all shadow-xl backdrop-blur-sm"
+            title="Oldingi muqova (Chap strelka)"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Next Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNextLightbox();
+            }}
+            className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 z-50 p-3 rounded-full bg-white/10 hover:bg-white/25 text-white transition-all shadow-xl backdrop-blur-sm"
+            title="Keyingi muqova (O‘ng strelka)"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Modal Content Box */}
+          <div 
+            className="relative flex flex-col items-center max-w-4xl max-h-[96vh] w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header info */}
+            <div className="w-full flex items-center justify-between pb-3 px-2 text-white">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+                  {lightboxData.conceptBadge}
+                </span>
+                <h3 className="font-bold text-sm sm:text-base text-white truncate">
+                  {lightboxData.title}
+                </h3>
+              </div>
+              <span className="text-xs text-white/60 hidden sm:inline">
+                {formData.title} • {formData.author}
+              </span>
+            </div>
+
+            {/* Big Artwork */}
+            <div className="relative max-h-[75vh] aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 bg-slate-950 flex items-center justify-center">
+              <img
+                src={lightboxData.imageUrl}
+                alt={lightboxData.title}
+                className="w-full h-full object-contain"
+              />
+              
+              {/* Overlay with title/author */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 p-6 flex flex-col justify-between pointer-events-none">
+                <span className="self-start text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/40 text-white backdrop-blur-md uppercase tracking-wider border border-white/20">
+                  {lightboxData.conceptBadge}
+                </span>
+                <div>
+                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+                    {formData.title}
+                  </h2>
+                  <p className="text-sm sm:text-base text-amber-300 font-medium mt-1 drop-shadow">
+                    {formData.author}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Controls */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              {!lightboxData.isOld && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveVariantIndex(lightboxData.index);
+                    setLightboxData(null);
+                    const el = document.getElementById('v2-editor-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Online Editorda tahrirlash</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (lightboxData.isOld) {
+                    const link = document.createElement('a');
+                    link.href = lightboxData.imageUrl;
+                    link.download = `${formData.title || 'kitob'}_eski_muqova.png`;
+                    link.click();
+                  } else {
+                    const v = variants[lightboxData.index];
+                    downloadCoverAsPng(formData, v, lightboxData.imageUrl);
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 transition-all flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                <span>Yuklab olish (PNG)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

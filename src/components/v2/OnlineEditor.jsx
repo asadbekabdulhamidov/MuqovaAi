@@ -15,7 +15,14 @@ import {
 import { downloadCoverAsPng } from '../../utils/canvasExport';
 import { DEFAULT_FALLBACK_IMAGES } from '../../services/aiService';
 
-export function OnlineEditor({ bookData, variant, onSaveEdits }) {
+export function OnlineEditor({ 
+  bookData, 
+  variant, 
+  variants = [], 
+  activeVariantIndex = 0, 
+  onSelectVariant, 
+  onSaveEdits 
+}) {
   const [titleText, setTitleText] = useState(bookData?.title || 'ZAMON');
   const [authorText, setAuthorText] = useState(bookData?.author || 'A. Karimov');
   const [fontFamily, setFontFamily] = useState('Playfair Display');
@@ -164,6 +171,76 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
           </button>
         </div>
       </div>
+
+      {/* 1. DIZAYN VARIANTINI TANLASH (Foydalanuvchi qaysi dizayn yoqqan bo'lsa shuni tanlaydi) */}
+      {variants && variants.length > 0 && (
+        <div className="bg-slate-50/90 p-3 sm:p-4 rounded-2xl border border-slate-200/90 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                <Layers className="w-3.5 h-3.5" />
+              </span>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                Tahrirlash uchun qaysi dizayn yoqqan bo‘lsa, shuni tanlang:
+              </h4>
+            </div>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200">
+              Hozir tahrirlanmoqda: {variant?.title || `Variant ${String.fromCharCode(65 + activeVariantIndex)}`}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {variants.map((v, idx) => {
+              const isSelected = idx === activeVariantIndex;
+              return (
+                <button
+                  key={v.id || idx}
+                  type="button"
+                  onClick={() => onSelectVariant && onSelectVariant(idx)}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-3 group ${
+                    isSelected
+                      ? 'bg-white border-indigo-600 ring-2 ring-indigo-500/20 shadow-md'
+                      : 'bg-white/70 border-slate-200 hover:bg-white hover:border-slate-300 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="w-12 sm:w-14 aspect-[2/3] rounded-lg overflow-hidden bg-slate-900 border border-slate-200 shrink-0 shadow-inner">
+                    <img
+                      src={v.imageUrl || v.fallbackUrl || DEFAULT_FALLBACK_IMAGES[idx % DEFAULT_FALLBACK_IMAGES.length]}
+                      alt={v.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        Variant {String.fromCharCode(65 + idx)}
+                      </span>
+                      {isSelected && (
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                          Faol
+                        </span>
+                      )}
+                    </div>
+                    <h5 className="text-xs font-bold text-slate-900 truncate mt-1">
+                      {v.title}
+                    </h5>
+                    <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                      {v.conceptBadge || v.tagline}
+                    </p>
+                  </div>
+                  {isSelected && (
+                    <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
