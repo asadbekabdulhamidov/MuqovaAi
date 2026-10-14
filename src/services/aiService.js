@@ -250,9 +250,8 @@ export async function generateOpenAiImage(prompt, apiKey) {
       model: 'dall-e-3',
       prompt: prompt.trim(),
       n: 1,
-      size: '1024x1792', // Vertikal 9:16 kitob formati
-      quality: 'standard',
-      response_format: 'url'
+      size: '1024x1792',
+      quality: 'standard'
     })
   });
 
