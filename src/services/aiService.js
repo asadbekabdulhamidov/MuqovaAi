@@ -233,59 +233,64 @@ export function getAiImageUrl(prompt, seed, width = 500, height = 750, apiKey = 
 }
 
 /**
- * OpenAI DALL-E 3 rasmiy API orqali ultra-aniq vertikal kitob muqovasini generatsiya qilish
+ * OpenAI rasmiy Image Generation API (GPT-Image-2.5-flare / Sunburst / DALL-E 3) orqali professional muqova generatsiya qilish
  */
 export async function generateOpenAiImage(prompt, apiKey) {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("OpenAI API kaliti kiritilmagan. Iltimos, Sozlamalar darchasida kalitingizni kiriting.");
   }
 
-  // To'g'ridan-to'g'ri DALL-E 3 (1024x1792 vertikal ultra sifat)
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey.trim()}`
-    },
-    body: JSON.stringify({
-      model: 'dall-e-3',
-      prompt: prompt.trim(),
-      n: 1,
-      size: '1024x1792',
-      quality: 'standard'
-    })
-  });
+  // OpenAI rasmiy rasm generatsiya modellarining tartibi (2026-yilgi GPT-Image-2.5 va DALL-E)
+  const candidateModels = [
+    'gpt-image-2.5-flare',
+    'gpt-image-2.5-sunburst',
+    'gpt-image-2',
+    'dall-e-3'
+  ];
 
-  const data = await response.json();
+  let lastError = null;
 
-  if (!response.ok) {
-    let errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
-
-    // Agar model topilmadi desa, kalitning modellar ro'yxatini aniqlab ko'ramiz
+  for (const model of candidateModels) {
     try {
-      const modelsRes = await fetch('https://api.openai.com/v1/models', {
-        headers: { 'Authorization': `Bearer ${apiKey.trim()}` }
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey.trim()}`
+        },
+        body: JSON.stringify({
+          model: model,
+          prompt: prompt.trim(),
+          n: 1,
+          size: '1024x1792'
+        })
       });
-      if (modelsRes.ok) {
-        const modelsJson = await modelsRes.json();
-        const modelIds = (modelsJson.data || []).map(m => m.id);
-        const hasDalle3 = modelIds.some(id => id.includes('dall-e-3'));
-        console.log('OpenAI ruxsat etilgan modellar:', modelIds);
 
-        if (!hasDalle3) {
-          errorMsg = `OpenAI xatosi: Sizning kalitingizda hali DALL-E 3 modeli faollashmagan.\n\nOpenAI $5 to'lov qabul qilingandan so'ng, hisobni "Build" darajasiga ko'tarishi va DALL-E 3 ni butun tizim bo'ylab yoqishi uchun 10-15 daqiqa sinxronizatsiya vaqti ketishi mumkin.\n\nIltimos, OpenAI panelingizdagi chap menyudan "Limitlar" (Limits) bo'limini tekshirib ko'ring.`;
+      const data = await response.json();
+
+      if (response.ok && (data?.data?.[0]?.url || data?.data?.[0]?.b64_json)) {
+        if (data.data[0].url) return data.data[0].url;
+        if (data.data[0].b64_json) return `data:image/png;base64,${data.data[0].b64_json}`;
+      }
+
+      if (!response.ok) {
+        const msg = data?.error?.message || `Xatolik (${response.status})`;
+        lastError = msg;
+        // Agar ushbu model hisobda ochilmagan bo'lsa, keyingi modelga o'tamiz
+        if (msg.includes('does not exist') || msg.includes('not found') || response.status === 404 || response.status === 400) {
+          console.warn(`Model ${model} mavjud emas, keyingi model tekshirilmoqda...`, msg);
+          continue;
+        } else {
+          throw new Error(msg);
         }
       }
-    } catch (diagErr) {
-      console.warn('Model diagnostikasi xatosi:', diagErr);
+    } catch (err) {
+      if (err.message && !err.message.includes('does not exist') && !err.message.includes('not found')) {
+        throw err;
+      }
+      lastError = err.message;
     }
-
-    throw new Error(errorMsg);
   }
 
-  if (!data?.data?.[0]?.url) {
-    throw new Error("OpenAI tasvir manzilini qaytara olmadi.");
-  }
-
-  return data.data[0].url;
+  throw new Error(`OpenAI rasm chizishda xatolik: ${lastError || 'Tizimda ruxsat berilgan rasm modeli topilmadi'}`);
 }

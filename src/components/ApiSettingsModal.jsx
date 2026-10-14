@@ -78,11 +78,11 @@ export function ApiSettingsModal({ isOpen, onClose, settings, onSaveSettings }) 
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-xs text-white">OpenAI DALL-E 3 (Shaxsiy API kalit)</span>
+                <span className="font-bold text-xs text-white">OpenAI GPT-Image-2.5 & DALL-E (Shaxsiy API kalit)</span>
                 {provider === 'openai' && <Check className="w-4 h-4 text-indigo-400" />}
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
-                Agar o‘zingizning OpenAI platformangizdagi API kalitingiz bo‘lsa, to‘g‘ridan-to‘g‘ri ulashingiz mumkin.
+                OpenAI ning eng zamonaviy GPT-Image-2.5-flare / Sunburst hamda DALL-E modellari orqali yuqori sifatli generatsiya.
               </p>
             </div>
 
