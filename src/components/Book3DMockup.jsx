@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { RotateCw, Eye, Sparkles, Layers } from 'lucide-react';
+import { DEFAULT_FALLBACK_IMAGES } from '../services/aiService';
 
 export function Book3DMockup({ 
   bookData, 
@@ -94,8 +95,8 @@ export function Book3DMockup({
               alt={bookData.title}
               className="w-full h-full object-cover"
               onError={(e) => {
-                // Agar internet rasmida xatolik bo'lsa, xatolik chiqmasligi uchun ushlab qoladi
-                e.target.style.opacity = '0.9';
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
               }}
             />
 

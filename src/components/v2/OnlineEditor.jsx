@@ -13,6 +13,7 @@ import {
   Save
 } from 'lucide-react';
 import { downloadCoverAsPng } from '../../utils/canvasExport';
+import { DEFAULT_FALLBACK_IMAGES } from '../../services/aiService';
 
 export function OnlineEditor({ bookData, variant, onSaveEdits }) {
   const [titleText, setTitleText] = useState(bookData.title || 'ZAMON');
@@ -97,8 +98,12 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
             
             {/* Rasm (CSS filtrlari bilan jonli o'zgaradi) */}
             <img
-              src={variant?.imageUrl}
+              src={variant?.imageUrl || DEFAULT_FALLBACK_IMAGES[0]}
               alt={titleText}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+              }}
               className="w-full h-full object-cover transition-all duration-200"
               style={{
                 filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`

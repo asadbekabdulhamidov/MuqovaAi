@@ -12,6 +12,7 @@ import {
   Star 
 } from 'lucide-react';
 import { SHOWCASE_PRESETS } from '../constants/presets';
+import { DEFAULT_FALLBACK_IMAGES } from '../services/aiService';
 
 export function HeroSection({ onSelectPreset, onStartCreate }) {
   // Featured mockup book for the right side of the hero
@@ -101,6 +102,10 @@ export function HeroSection({ onSelectPreset, onStartCreate }) {
                   <img
                     src={featuredBook.mockImages.minimalist}
                     alt={featuredBook.title}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   />
                   
@@ -179,7 +184,7 @@ export function HeroSection({ onSelectPreset, onStartCreate }) {
 
           {/* Desktop: 4 ustunli to'r | Mobile: Gorizontal silliq skroll (snap-x) */}
           <div className="overflow-x-auto flex gap-4 snap-x no-scrollbar pb-3 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible">
-            {SHOWCASE_PRESETS.map((preset) => (
+            {SHOWCASE_PRESETS.map((preset, index) => (
               <button
                 key={preset.id}
                 onClick={() => onSelectPreset(preset)}
@@ -191,6 +196,10 @@ export function HeroSection({ onSelectPreset, onStartCreate }) {
                     <img
                       src={preset.mockImages.illustration || preset.mockImages.minimalist}
                       alt={preset.title}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />

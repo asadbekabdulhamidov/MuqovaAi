@@ -114,15 +114,22 @@ export function generateAlternativeVariants(bookData) {
   ];
 }
 
+export const DEFAULT_FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80'
+];
+
 /**
- * Rasm URL manzilini yaratish (Pollinations FLUX yoki Custom API)
+ * Rasm URL manzilini yaratish (Pollinations tezkor modeli yoki Custom API)
  */
-export function getAiImageUrl(prompt, seed, width = 768, height = 1088, apiKey = '', provider = 'pollinations') {
+export function getAiImageUrl(prompt, seed, width = 600, height = 900, apiKey = '', provider = 'pollinations') {
   if (provider === 'pollinations' || !apiKey) {
-    const cleanPrompt = encodeURIComponent(prompt.trim());
-    return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`;
+    const cleanPrompt = encodeURIComponent(prompt.trim().slice(0, 180));
+    return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
   }
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
 }
 
 /**

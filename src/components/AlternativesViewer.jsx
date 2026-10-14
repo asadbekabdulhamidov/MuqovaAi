@@ -16,6 +16,7 @@ import {
 import { Book3DMockup } from './Book3DMockup';
 import { SpreadLayout } from './SpreadLayout';
 import { downloadCoverAsPng, downloadPrintPassport } from '../utils/canvasExport';
+import { DEFAULT_FALLBACK_IMAGES } from '../services/aiService';
 
 export function AlternativesViewer({ 
   variants, 
@@ -218,6 +219,10 @@ export function AlternativesViewer({
                 <img
                   src={activeVariant.imageUrl}
                   alt={bookData.title}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length];
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
 

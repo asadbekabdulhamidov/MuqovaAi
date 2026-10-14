@@ -27,6 +27,7 @@ import {
 } from '../../constants/presets';
 import { OnlineEditor } from './OnlineEditor';
 import { downloadCoverAsPng, downloadPrintPassport } from '../../utils/canvasExport';
+import { DEFAULT_FALLBACK_IMAGES } from '../../services/aiService';
 
 export function CoverAiV2({ 
   formData, 
@@ -401,6 +402,10 @@ export function CoverAiV2({
                     <img
                       src={sample.img}
                       alt={sample.name}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
@@ -455,6 +460,10 @@ export function CoverAiV2({
                   <img
                     src={variant.imageUrl}
                     alt={formData.title}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 p-4 flex flex-col justify-between">
@@ -534,8 +543,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[0]?.imageUrl}
+                src={variants[0]?.imageUrl || DEFAULT_FALLBACK_IMAGES[0]}
                 alt="Variant 1"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+                }}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -570,8 +583,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[1]?.imageUrl}
+                src={variants[1]?.imageUrl || DEFAULT_FALLBACK_IMAGES[1]}
                 alt="Variant 2"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[1];
+                }}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -606,8 +623,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[2]?.imageUrl}
+                src={variants[2]?.imageUrl || DEFAULT_FALLBACK_IMAGES[2]}
                 alt="Variant 3"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[2];
+                }}
                 className="w-full h-full object-cover"
               />
             </div>

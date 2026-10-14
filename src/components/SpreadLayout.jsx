@@ -1,5 +1,6 @@
 import React from 'react';
 import { Scissors, Ruler, ShieldCheck, Download, Printer } from 'lucide-react';
+import { DEFAULT_FALLBACK_IMAGES } from '../services/aiService';
 
 export function SpreadLayout({ 
   bookData, 
@@ -147,6 +148,10 @@ export function SpreadLayout({
               <img
                 src={coverImage}
                 alt={bookData.title}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+                }}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/50" />
