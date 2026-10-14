@@ -237,6 +237,10 @@ export function App() {
             <HeroSection
               onSelectPreset={handleSelectPreset}
               onStartNew={handleStartNew}
+              onStartCreate={() => {
+                const el = document.getElementById('generator-form-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
 
             <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 space-y-6">

@@ -76,10 +76,10 @@ export function ResearchSection() {
       </div>
 
       {/* 2. An'anaviy usul vs MuqovaAI qiyosiy tahlili */}
-      <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-800">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-4 sm:p-8 shadow-2xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-400" />
               Qiyosiy Samaradorlik Tahlili
             </h3>
@@ -142,7 +142,7 @@ export function ResearchSection() {
 
       {/* 3. Tizim Arxitekturasi va Algoritmi */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 hover:border-indigo-500/40 transition-colors space-y-2">
           <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xs">
             01
           </div>
@@ -152,7 +152,7 @@ export function ResearchSection() {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 hover:border-purple-500/40 transition-colors space-y-2">
           <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 font-bold text-xs">
             02
           </div>
@@ -162,7 +162,7 @@ export function ResearchSection() {
           </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-slate-900/60 backdrop-blur-xl border border-slate-800 hover:border-emerald-500/40 transition-colors space-y-2">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold text-xs">
             03
           </div>
@@ -174,7 +174,7 @@ export function ResearchSection() {
       </div>
 
       {/* 4. Dizaynerlar va Ekspertlar Baholash So'rovnomasi (Interactive Likert Evaluation) */}
-      <div className="bg-slate-900/90 rounded-2xl border border-indigo-900/40 p-6 sm:p-8 shadow-2xl relative">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-indigo-900/40 p-4 sm:p-8 shadow-2xl relative">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2">

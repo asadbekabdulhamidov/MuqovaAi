@@ -36,21 +36,21 @@ export function BookForm({
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-3.5 sm:p-6 shadow-xl relative overflow-hidden">
+    <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-4 sm:p-8 shadow-2xl relative overflow-hidden">
       {/* Accent corner gradient */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="flex items-center justify-between pb-5 border-b border-slate-800 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-800/80 mb-6 gap-2">
         <div>
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
             <BookOpen className="w-5 h-5 text-indigo-400" />
             Kitob Parametrlari va Kirish Ma’lumotlari
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Muqobil dizayn variantlarini tavsiya etish uchun kitob haqida ma’lumotlarni to‘ldiring
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Muqobil dizayn variantlarini tavsiya etish uchun kitob haqidagi ma’lumotlarni to‘ldiring
           </p>
         </div>
-        <div className="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-800 text-indigo-300 border border-slate-700">
+        <div className="self-start sm:self-auto text-[11px] font-mono px-3 py-1 rounded-full bg-indigo-950/60 text-indigo-300 border border-indigo-800/60">
           Semantik Tahlil v1.0
         </div>
       </div>

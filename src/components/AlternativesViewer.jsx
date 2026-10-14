@@ -115,7 +115,7 @@ export function AlternativesViewer({
       </div>
 
       {/* Tanlangan Variantning Interaktiv Vitrinasi (Active Variant Showcase) */}
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-3.5 sm:p-6 shadow-2xl space-y-5">
+      <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-slate-800 p-4 sm:p-8 shadow-2xl space-y-6">
         
         {/* Tab Controls and Actions (Mobile Optimized) */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-4 border-b border-slate-800">
