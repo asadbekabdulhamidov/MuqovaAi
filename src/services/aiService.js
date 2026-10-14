@@ -26,18 +26,17 @@ export function generateAlternativeVariants(bookData) {
   const seedB = seedA + 137;
   const seedC = seedA + 942;
 
-  // Eski muqova mavjud bo'lsa, AI ga uning modernizatsiya qilingan redesignini yaratish bo'yicha ko'rsatma beramiz
   const redesignContext = bookData.oldCoverImage
     ? 'Modern remaster and visual redesign of previous book cover edition: '
     : '';
 
-  // Variant A: Tipografik & Minimalist (Toza fon, matn va harflarsiz)
+  // Variant A: Tipografik & Minimalist
   const promptA = `${redesignContext}Award-winning minimalist book cover art, genre: ${bookData.genre}. Abstract central concept: ${bookData.title}, elegant modern composition, Swiss graphic design style, ${palette.prompt}, cinematic atmospheric lighting, hyper-detailed, 8k resolution, editorial masterpiece, clean aesthetic, no text, no words, no letters`;
 
-  // Variant B: Badiiy & Illyustrativ (Boy syujet, matnsiz)
+  // Variant B: Badiiy & Illyustrativ
   const promptB = `${redesignContext}Masterpiece narrative digital illustration for a book cover, genre: ${bookData.genre}. Atmospheric visual storytelling inspired by ${bookData.title}, expressive cinematic mood, intricate details, trending on ArtStation, ${palette.prompt}, dramatic volumetric lighting, 8k, photorealistic octane render, no text, no typography`;
 
-  // Variant C: Konseptual & Ramziy (Simvolik, no text)
+  // Variant C: Konseptual & Ramziy
   const promptC = `${redesignContext}Deep philosophical avant-garde book cover art, genre: ${bookData.genre}. Symbolic surrealism representing ${bookData.title}, ${styleObj.promptStyle}, ${palette.prompt}, chiaroscuro dramatic contrast, gallery fine art exhibition standard, sophisticated visual metaphor, 8k resolution, masterpiece, no text`;
 
   return [
