@@ -136,7 +136,12 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
 
           <button
             onClick={handleDownload}
-            className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            disabled={variant?.loadingStatus && variant.loadingStatus !== 'ready'}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${
+              variant?.loadingStatus && variant.loadingStatus !== 'ready'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
           >
             <Download className="w-3.5 h-3.5" />
             <span>Yuklab olish</span>
@@ -166,6 +171,19 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
 
             {/* Qoraytiruvchi gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/50 pointer-events-none" />
+
+            {/* Generatsiya holati badgelari */}
+            {variant?.loadingStatus === 'generating' && (
+              <div className="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-full bg-indigo-600/95 text-white text-[10px] font-bold shadow-lg flex items-center gap-1.5 animate-pulse border border-indigo-400/40">
+                <Sparkles className="w-3 h-3 text-amber-300" />
+                <span>AI rasm chizmoqda...</span>
+              </div>
+            )}
+            {variant?.loadingStatus === 'waiting' && (
+              <div className="absolute top-3 right-3 z-30 px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-300 text-[10px] font-bold shadow-lg flex items-center gap-1.5 border border-amber-400/30">
+                <span>⏳ Navbatda tayyorlanmoqda...</span>
+              </div>
+            )}
 
             {/* Interaktiv tahrirlanuvchi matnlar qatlami */}
             <div className="absolute inset-0 p-6 flex flex-col justify-between z-10 pointer-events-none">

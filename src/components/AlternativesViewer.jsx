@@ -79,7 +79,15 @@ export function AlternativesViewer({
                     {variant.conceptBadge}
                   </span>
                   
-                  {isSelected ? (
+                  {variant.loadingStatus === 'generating' ? (
+                    <span className="flex items-center gap-1 text-[11px] text-indigo-400 font-medium animate-pulse">
+                      Chizilmoqda...
+                    </span>
+                  ) : variant.loadingStatus === 'waiting' ? (
+                    <span className="flex items-center gap-1 text-[11px] text-amber-400 font-medium">
+                      Navbatda
+                    </span>
+                  ) : isSelected ? (
                     <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
                       <CheckCircle className="w-3.5 h-3.5" /> Faol
                     </span>

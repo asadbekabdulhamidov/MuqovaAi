@@ -16,7 +16,8 @@ import {
   SlidersHorizontal,
   ChevronDown,
   Edit3,
-  Bookmark
+  Bookmark,
+  Clock
 } from 'lucide-react';
 import { 
   BOOK_FORMATS, 
@@ -448,6 +449,10 @@ export function CoverAiV2({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {variants.map((variant, index) => {
             const isSelected = index === activeVariantIndex;
+            const isReady = variant.loadingStatus === 'ready' || !variant.loadingStatus;
+            const isGeneratingThis = variant.loadingStatus === 'generating';
+            const isWaitingThis = variant.loadingStatus === 'waiting';
+
             return (
               <div
                 key={variant.id}
@@ -457,32 +462,72 @@ export function CoverAiV2({
               >
                 {/* 2:3 Vertical Cover Artwork */}
                 <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group">
-                  <img
-                    src={variant.imageUrl || variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length]}
-                    alt={formData.title}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
-                    }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 p-4 flex flex-col justify-between">
-                    <span className="self-start text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md uppercase tracking-wider">
-                      {variant.conceptBadge}
-                    </span>
-                    <div>
-                      <h3 className="font-serif text-lg font-bold text-white leading-tight">
-                        {formData.title}
-                      </h3>
-                      <p className="text-[11px] text-amber-300 font-medium">{formData.author}</p>
+                  {isGeneratingThis ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950">
+                      <div className="relative mb-4">
+                        <div className="w-14 h-14 rounded-2xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center animate-pulse">
+                          <Wand2 className="w-7 h-7 text-indigo-300 animate-spin" />
+                        </div>
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
+                        {variant.title} ({variant.conceptBadge})
+                      </span>
+                      <h4 className="text-white font-bold text-sm">AI rasm chizmoqda... ✨</h4>
+                      <p className="text-[11px] text-slate-400 mt-1">Neyrotarmoq variantni shakllantirmoqda</p>
                     </div>
-                  </div>
+                  ) : isWaitingThis ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-900/95 border border-slate-800">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3">
+                        <Clock className="w-6 h-6 text-amber-400 animate-pulse" />
+                      </div>
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/20 mb-2">
+                        Navbatda
+                      </span>
+                      <h4 className="text-slate-200 font-bold text-xs">{variant.title} tayyorlanmoqda...</h4>
+                      <p className="text-[10px] text-slate-400 mt-1">Oldingi variant tayyorlangach avtomatik chiziladi</p>
+                    </div>
+                  ) : (
+                    <>
+                      <img
+                        src={variant.imageUrl || variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length]}
+                        alt={formData.title}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 p-4 flex flex-col justify-between">
+                        <span className="self-start text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-md uppercase tracking-wider">
+                          {variant.conceptBadge}
+                        </span>
+                        <div>
+                          <h3 className="font-serif text-lg font-bold text-white leading-tight">
+                            {formData.title}
+                          </h3>
+                          <p className="text-[11px] text-amber-300 font-medium">{formData.author}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Variant nomi va tavsifi */}
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900">{variant.title}</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-sm text-slate-900">{variant.title}</h4>
+                    {isGeneratingThis && (
+                      <span className="text-[10px] text-indigo-600 font-bold animate-pulse">Chizilmoqda...</span>
+                    )}
+                    {isWaitingThis && (
+                      <span className="text-[10px] text-amber-600 font-semibold">Navbatda</span>
+                    )}
+                  </div>
                   <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{variant.tagline}</p>
                 </div>
 
@@ -490,22 +535,31 @@ export function CoverAiV2({
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <button
                     onClick={() => {
+                      if (!isReady) return;
                       setActiveVariantIndex(index);
                       const el = document.getElementById('v2-editor-section');
                       if (el) el.scrollIntoView({ behavior: 'smooth' });
                     }}
+                    disabled={!isReady}
                     className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                      !isReady
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                     }`}
                   >
-                    <span>Tavsiya qilish</span>
+                    <span>{isReady ? 'Tavsiya qilish' : 'Tayyorlanmoqda...'}</span>
                   </button>
 
                   <button
-                    onClick={() => handleDownload(variant)}
-                    className="py-2 px-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-all flex items-center justify-center gap-1"
+                    onClick={() => isReady && handleDownload(variant)}
+                    disabled={!isReady}
+                    className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      !isReady
+                        ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                    }`}
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Yuklab olish</span>
@@ -542,17 +596,31 @@ export function CoverAiV2({
               </span>
             </div>
 
-            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
-              <img
-                src={variants[0]?.imageUrl || variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]}
-                alt="Variant 1"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0];
-                }}
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900">
+              {variants[0]?.loadingStatus === 'generating' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-indigo-950 to-slate-900">
+                  <Wand2 className="w-6 h-6 text-indigo-400 animate-spin mb-2" />
+                  <span className="text-[11px] font-bold text-white">AI chizmoqda...</span>
+                  <span className="text-[10px] text-indigo-300 mt-0.5">1-variant</span>
+                </div>
+              ) : variants[0]?.loadingStatus === 'waiting' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-900">
+                  <Clock className="w-5 h-5 text-amber-400 animate-pulse mb-2" />
+                  <span className="text-[11px] font-bold text-slate-300">Tayyorlanmoqda...</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">Navbatda</span>
+                </div>
+              ) : (
+                <img
+                  src={variants[0]?.imageUrl || variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]}
+                  alt="Variant 1"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0];
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
 
             <div className="pt-2 border-t border-slate-200 space-y-1.5 text-xs text-slate-700">
@@ -583,17 +651,31 @@ export function CoverAiV2({
               </span>
             </div>
 
-            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
-              <img
-                src={variants[1]?.imageUrl || variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1]}
-                alt="Variant 2"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1];
-                }}
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900">
+              {variants[1]?.loadingStatus === 'generating' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-purple-950 to-slate-900">
+                  <Wand2 className="w-6 h-6 text-purple-400 animate-spin mb-2" />
+                  <span className="text-[11px] font-bold text-white">AI chizmoqda...</span>
+                  <span className="text-[10px] text-purple-300 mt-0.5">2-variant</span>
+                </div>
+              ) : variants[1]?.loadingStatus === 'waiting' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-900">
+                  <Clock className="w-5 h-5 text-amber-400 animate-pulse mb-2" />
+                  <span className="text-[11px] font-bold text-slate-300">Tayyorlanmoqda...</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">Navbatda</span>
+                </div>
+              ) : (
+                <img
+                  src={variants[1]?.imageUrl || variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1]}
+                  alt="Variant 2"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1];
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
 
             <div className="pt-2 border-t border-slate-200 space-y-1.5 text-xs text-slate-700">
@@ -624,17 +706,31 @@ export function CoverAiV2({
               </span>
             </div>
 
-            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
-              <img
-                src={variants[2]?.imageUrl || variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2]}
-                alt="Variant 3"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2];
-                }}
-                className="w-full h-full object-cover"
-              />
+            <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900">
+              {variants[2]?.loadingStatus === 'generating' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-pink-950 to-slate-900">
+                  <Wand2 className="w-6 h-6 text-pink-400 animate-spin mb-2" />
+                  <span className="text-[11px] font-bold text-white">AI chizmoqda...</span>
+                  <span className="text-[10px] text-pink-300 mt-0.5">3-variant</span>
+                </div>
+              ) : variants[2]?.loadingStatus === 'waiting' ? (
+                <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-900">
+                  <Clock className="w-5 h-5 text-amber-400 animate-pulse mb-2" />
+                  <span className="text-[11px] font-bold text-slate-300">Tayyorlanmoqda...</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">Navbatda</span>
+                </div>
+              ) : (
+                <img
+                  src={variants[2]?.imageUrl || variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2]}
+                  alt="Variant 3"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2];
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              )}
             </div>
 
             <div className="pt-2 border-t border-slate-200 space-y-1.5 text-xs text-slate-700">

@@ -27,6 +27,28 @@ import {
   SlidersHorizontal 
 } from 'lucide-react';
 
+/**
+ * Tasvirni neyrotarmoqdan yuklab olinishini xavfsiz kutuvchi yordamchi funksiya
+ */
+function preloadImageWithTimeout(url, timeoutMs = 18000) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => {
+      resolve(false);
+    }, timeoutMs);
+
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(true);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(false);
+    };
+    img.src = url;
+  });
+}
+
 export function App() {
   // Dizayn rejimi: 'v2' (Yorug' CoverAI) yoki 'v1' (Dark MuqovaAI)
   const [designMode, setDesignMode] = useState(() => {
@@ -82,7 +104,8 @@ export function App() {
       return {
         ...v,
         imageUrl: mockImg || fallback,
-        fallbackUrl: fallback
+        fallbackUrl: fallback,
+        loadingStatus: 'ready'
       };
     });
   });
@@ -109,70 +132,73 @@ export function App() {
       const newVariants = generateAlternativeVariants(dataToUse);
       await new Promise(r => setTimeout(r, 400));
 
-      setGenerationStep('4/4: Neyrotarmoq orqali muqova kompozitsiyalari sintezlanmoqda...');
+      setGenerationStep('4/4: Neyrotarmoq variantlarni ketma-ket generatsiya qilmoqda...');
 
-      // AI so'rovlarini parallel emas, ketma-ket (staggered) yuboramiz.
-      // Sababi: Bepul neyrotarmoq (Pollinations AI) bir vaqtda 3 ta so'rov kelganda 402 rate-limit beradi.
-      const initialWithFallbacks = newVariants.map((v, i) => {
+      // 1. Dastlabki holat: Variant A aktiv generatsiyada, Variant B va C navbatda (kutilmoqda)
+      const initialList = newVariants.map((v, i) => {
         const fallback = generateSvgFallback(dataToUse.title, dataToUse.author, v.id, v.title);
-        let url;
-        if (settings.provider === 'offline') {
-          url = fallback;
-        } else {
-          // Variant A darhol AI dan so'raladi
-          url = i === 0 
-            ? getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider)
-            : fallback;
-        }
         return {
           ...v,
-          imageUrl: url,
-          fallbackUrl: fallback
+          imageUrl: fallback,
+          fallbackUrl: fallback,
+          loadingStatus: i === 0 ? 'generating' : 'waiting'
         };
       });
 
-      setVariants(initialWithFallbacks);
+      setVariants(initialList);
       setActiveVariantIndex(0);
-
-      // Agar online rejimda bo'lsa:
-      // Variant B ni 4.5 soniyadan so'ng AI dan chaqiramiz
-      if (settings.provider !== 'offline' && newVariants.length > 1) {
-        setTimeout(() => {
-          setVariants(prev => {
-            if (!prev[1]) return prev;
-            const updated = [...prev];
-            updated[1] = {
-              ...updated[1],
-              imageUrl: getAiImageUrl(updated[1].prompt, updated[1].seed, 500, 750, settings.apiKey, settings.provider)
-            };
-            return updated;
-          });
-        }, 4500);
-      }
-
-      // Variant C ni 9 soniyadan so'ng AI dan chaqiramiz
-      if (settings.provider !== 'offline' && newVariants.length > 2) {
-        setTimeout(() => {
-          setVariants(prev => {
-            if (!prev[2]) return prev;
-            const updated = [...prev];
-            updated[2] = {
-              ...updated[2],
-              imageUrl: getAiImageUrl(updated[2].prompt, updated[2].seed, 500, 750, settings.apiKey, settings.provider)
-            };
-            return updated;
-          });
-        }, 9000);
-      }
 
       if (designMode === 'v1') {
         setActiveTab('alternatives');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        // V2 da natijalar bo'limiga silliq tushiramiz
         const el = document.getElementById('v2-editor-section');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
       }
+
+      // Agar oflayn rejim bo'lsa darhol yakunlaymiz
+      if (settings.provider === 'offline') {
+        setVariants(prev => prev.map(v => ({ ...v, loadingStatus: 'ready' })));
+        return;
+      }
+
+      // 2. Ketma-ket (bitta-bitta) neyrotarmoqdan yuklash navbati (Pipeline)
+      // Pollinations serveriga bir vaqtda faqat 1 ta so'rov yuboriladi
+      (async () => {
+        for (let i = 0; i < newVariants.length; i++) {
+          // Ushbu variantni aktiv generatsiya holatiga o'tkazamiz
+          setVariants(prev => {
+            const next = [...prev];
+            if (next[i]) {
+              next[i] = { ...next[i], loadingStatus: 'generating' };
+            }
+            return next;
+          });
+
+          const v = newVariants[i];
+          const aiUrl = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
+
+          // Neyrotarmoq rasm chizib bo'lishini kutamiz (boshqa so'rov yubormasdan)
+          const isSuccess = await preloadImageWithTimeout(aiUrl, 18000);
+
+          // Rasm tayyor bo'lgach, uni o'z o'rniga joylaymiz
+          setVariants(prev => {
+            const next = [...prev];
+            if (next[i]) {
+              next[i] = {
+                ...next[i],
+                imageUrl: isSuccess ? aiUrl : next[i].fallbackUrl,
+                loadingStatus: 'ready'
+              };
+            }
+            return next;
+          });
+
+          // Server keyingi so'rovni qabul qilishi uchun 600ms tanaffus
+          await new Promise(r => setTimeout(r, 600));
+        }
+      })();
+
     } catch (err) {
       console.error('Generatsiya xatosi:', err);
     } finally {
@@ -184,6 +210,14 @@ export function App() {
   // Alohida bitta variantni qayta yaratish
   const handleRegenerateVariant = async (index) => {
     setIsRegenerating(true);
+    setVariants(prev => {
+      const next = [...prev];
+      if (next[index]) {
+        next[index] = { ...next[index], loadingStatus: 'generating' };
+      }
+      return next;
+    });
+
     try {
       const current = variants[index];
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
@@ -194,9 +228,9 @@ export function App() {
         newUrl = fallback;
       } else {
         newUrl = getAiImageUrl(current.prompt, newSeed, 500, 750, settings.apiKey, settings.provider);
+        const isSuccess = await preloadImageWithTimeout(newUrl, 18000);
+        if (!isSuccess) newUrl = fallback;
       }
-
-      await new Promise(r => setTimeout(r, 600));
 
       setVariants(prev => {
         const next = [...prev];
@@ -204,12 +238,18 @@ export function App() {
           ...next[index],
           seed: newSeed,
           imageUrl: newUrl,
-          fallbackUrl: fallback
+          fallbackUrl: fallback,
+          loadingStatus: 'ready'
         };
         return next;
       });
     } catch (e) {
       console.error(e);
+      setVariants(prev => {
+        const next = [...prev];
+        if (next[index]) next[index] = { ...next[index], loadingStatus: 'ready' };
+        return next;
+      });
     } finally {
       setIsRegenerating(false);
     }
