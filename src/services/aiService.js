@@ -114,82 +114,113 @@ export function generateAlternativeVariants(bookData) {
   ];
 }
 
+/**
+ * Offline / Fallback SVG muqova generatsiya qiluvchi funksiya
+ * Internet sekin bo'lsa yoki taqdimotda rasm yuklanmasa ham benuqson ishlaydi
+ */
+export function generateSvgFallback(title = 'Kitob Nomi', author = 'Muallif', variantType = 'variant_a', styleName = 'Dizayn') {
+  const safeTitle = (title || 'Kitob Nomi').replace(/[<>&"]/g, '');
+  const safeAuthor = (author || 'Muallif').replace(/[<>&"]/g, '');
+  const safeStyle = (styleName || 'Muqobil Variant').replace(/[<>&"]/g, '');
+
+  const palettes = {
+    variant_a: {
+      bg1: '#0f172a',
+      bg2: '#1e3a8a',
+      accent: '#38bdf8',
+      badge: '#2563eb',
+      sub: '#93c5fd'
+    },
+    variant_b: {
+      bg1: '#2e1065',
+      bg2: '#581c87',
+      accent: '#c084fc',
+      badge: '#9333ea',
+      sub: '#e9d5ff'
+    },
+    variant_c: {
+      bg1: '#450a0a',
+      bg2: '#881337',
+      accent: '#fb7185',
+      badge: '#e11d48',
+      sub: '#fecdd3'
+    }
+  };
+
+  const p = palettes[variantType] || palettes.variant_a;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900" viewBox="0 0 600 900">
+    <defs>
+      <linearGradient id="bg_${variantType}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${p.bg1}" />
+        <stop offset="50%" stop-color="${p.bg2}" />
+        <stop offset="100%" stop-color="#020617" />
+      </linearGradient>
+      <radialGradient id="glow_${variantType}" cx="50%" cy="45%" r="50%">
+        <stop offset="0%" stop-color="${p.accent}" stop-opacity="0.35" />
+        <stop offset="100%" stop-color="${p.bg1}" stop-opacity="0" />
+      </radialGradient>
+      <pattern id="grid_${variantType}" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      </pattern>
+    </defs>
+    <rect width="600" height="900" fill="url(#bg_${variantType})"/>
+    <circle cx="300" cy="420" r="260" fill="url(#glow_${variantType})"/>
+    <rect width="600" height="900" fill="url(#grid_${variantType})"/>
+
+    <!-- Geometric Framing -->
+    <rect x="35" y="35" width="530" height="830" rx="14" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+    <rect x="45" y="45" width="510" height="810" rx="10" fill="none" stroke="${p.accent}" stroke-opacity="0.35" stroke-width="1"/>
+
+    <!-- Concept Badge -->
+    <rect x="160" y="70" width="280" height="32" rx="16" fill="${p.badge}" fill-opacity="0.6"/>
+    <text x="300" y="91" fill="#ffffff" font-size="11" font-family="system-ui, sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="2">
+      ${safeStyle.toUpperCase()}
+    </text>
+
+    <!-- Centerpiece Metaphor -->
+    <circle cx="300" cy="430" r="130" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+    <circle cx="300" cy="430" r="90" fill="none" stroke="${p.accent}" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <circle cx="300" cy="430" r="50" fill="rgba(255,255,255,0.06)"/>
+    <polygon points="300,340 375,470 225,470" fill="none" stroke="${p.accent}" stroke-width="2.5"/>
+
+    <!-- Title -->
+    <text x="300" y="210" fill="#ffffff" font-size="32" font-family="Georgia, serif" font-weight="bold" text-anchor="middle">
+      ${safeTitle.length > 25 ? safeTitle.slice(0, 24) + '...' : safeTitle}
+    </text>
+    <line x1="220" y1="240" x2="380" y2="240" stroke="${p.accent}" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Author -->
+    <text x="300" y="280" fill="${p.sub}" font-size="16" font-family="system-ui, sans-serif" font-weight="600" text-anchor="middle" letter-spacing="3">
+      ${safeAuthor.toUpperCase()}
+    </text>
+
+    <!-- Footer specs -->
+    <text x="300" y="760" fill="rgba(255,255,255,0.7)" font-size="12" font-family="system-ui, sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="4">
+      MUQOBIL DIZAYN VARIANTI
+    </text>
+    <text x="300" y="785" fill="rgba(255,255,255,0.4)" font-size="10" font-family="monospace" text-anchor="middle" letter-spacing="1">
+      AI GENERATED • BOSMAXONA STANDARTI
+    </text>
+  </svg>`;
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export const DEFAULT_FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80'
+  generateSvgFallback('Tipografik Dizayn', 'MuqovaAI', 'variant_a', 'Variant 1: Tipografik'),
+  generateSvgFallback('Badiiy Illyustratsiya', 'MuqovaAI', 'variant_b', 'Variant 2: Badiiy'),
+  generateSvgFallback('Konseptual Falsafa', 'MuqovaAI', 'variant_c', 'Variant 3: Konseptual'),
+  generateSvgFallback('Akademik Standart', 'MuqovaAI', 'variant_a', 'Variant 4: Standart')
 ];
 
 /**
  * Rasm URL manzilini yaratish (Pollinations tezkor modeli yoki Custom API)
  */
-export function getAiImageUrl(prompt, seed, width = 600, height = 900, apiKey = '', provider = 'pollinations') {
+export function getAiImageUrl(prompt, seed, width = 500, height = 750, apiKey = '', provider = 'pollinations') {
   if (provider === 'pollinations' || !apiKey) {
-    const cleanPrompt = encodeURIComponent(prompt.trim().slice(0, 180));
+    const cleanPrompt = encodeURIComponent(prompt.trim().slice(0, 160));
     return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
   }
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt.trim())}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
-}
-
-/**
- * Offline / Fallback SVG muqova generatsiya qiluvchi funksiya
- * Internet sekin bo'lsa yoki taqdimotda rasm yuklanmasa ham benuqson ishlaydi
- */
-export function generateSvgFallback(title, author, variantType, styleName) {
-  const bgGradients = {
-    variant_a: ['#0f172a', '#1e3a8a', '#3b82f6'],
-    variant_b: ['#2e1065', '#581c87', '#9333ea'],
-    variant_c: ['#450a0a', '#881337', '#e11d48']
-  };
-
-  const colors = bgGradients[variantType] || bgGradients.variant_a;
-
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="850" viewBox="0 0 600 850">
-    <defs>
-      <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${colors[0]}" />
-        <stop offset="50%" stop-color="${colors[1]}" />
-        <stop offset="100%" stop-color="${colors[2]}" />
-      </linearGradient>
-      <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-      </pattern>
-    </defs>
-    <rect width="600" height="850" fill="url(#bg)"/>
-    <rect width="600" height="850" fill="url(#grid)"/>
-    
-    <!-- Geometric framing -->
-    <rect x="40" y="40" width="520" height="770" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
-    <rect x="50" y="50" width="500" height="750" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
-    
-    <!-- Badge -->
-    <rect x="220" y="70" width="160" height="28" rx="14" fill="rgba(255,255,255,0.15)"/>
-    <text x="300" y="88" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold" text-anchor="middle" letter-spacing="2">${styleName.toUpperCase()}</text>
-    
-    <!-- Central artistic symbol -->
-    <circle cx="300" cy="425" r="130" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
-    <circle cx="300" cy="425" r="90" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="6,4"/>
-    <circle cx="300" cy="425" r="50" fill="rgba(255,255,255,0.08)"/>
-    <polygon points="300,360 360,460 240,460" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
-    
-    <!-- Book Title -->
-    <text x="300" y="210" fill="#ffffff" font-size="34" font-family="serif" font-weight="bold" text-anchor="middle" letter-spacing="1">
-      ${title.length > 25 ? title.slice(0, 24) + '...' : title}
-    </text>
-    <line x1="220" y1="240" x2="380" y2="240" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
-    
-    <!-- Author -->
-    <text x="300" y="280" fill="rgba(255,255,255,0.85)" font-size="18" font-family="sans-serif" font-weight="500" text-anchor="middle" letter-spacing="3">
-      ${author.toUpperCase()}
-    </text>
-    
-    <!-- Publisher / Edition info -->
-    <text x="300" y="740" fill="rgba(255,255,255,0.6)" font-size="12" font-family="sans-serif" text-anchor="middle" letter-spacing="4">
-      ILMIY-AMALIY NASHR
-    </text>
-    <text x="300" y="765" fill="rgba(255,255,255,0.4)" font-size="10" font-family="monospace" text-anchor="middle">
-      AI GENERATED COVER DESIGN SYSTEM
-    </text>
-  </svg>`;
 }

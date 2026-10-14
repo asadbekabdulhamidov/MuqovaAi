@@ -72,6 +72,7 @@ export function App() {
   const [variants, setVariants] = useState(() => {
     const initialVariants = generateAlternativeVariants(formData);
     return initialVariants.map((v, i) => {
+      const fallback = generateSvgFallback(formData.title, formData.author, v.id, v.title);
       const mockImg = i === 0 
         ? defaultPreset.mockImages.minimalist 
         : i === 1 
@@ -80,7 +81,8 @@ export function App() {
 
       return {
         ...v,
-        imageUrl: mockImg || getAiImageUrl(v.prompt, v.seed)
+        imageUrl: mockImg || fallback,
+        fallbackUrl: fallback
       };
     });
   });
@@ -110,15 +112,17 @@ export function App() {
       setGenerationStep('4/4: Neyrotarmoq orqali muqova kompozitsiyalari sintezlanmoqda...');
 
       const variantsWithImages = newVariants.map((v) => {
+        const fallback = generateSvgFallback(dataToUse.title, dataToUse.author, v.id, v.title);
         let url;
         if (settings.provider === 'offline') {
-          url = generateSvgFallback(dataToUse.title, dataToUse.author, v.id, v.styleName);
+          url = fallback;
         } else {
-          url = getAiImageUrl(v.prompt, v.seed, 768, 1088, settings.apiKey, settings.provider);
+          url = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
         }
         return {
           ...v,
-          imageUrl: url
+          imageUrl: url,
+          fallbackUrl: fallback
         };
       });
 
@@ -148,12 +152,13 @@ export function App() {
     try {
       const current = variants[index];
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
+      const fallback = generateSvgFallback(formData.title, formData.author, current.id, current.title);
       let newUrl;
 
       if (settings.provider === 'offline') {
-        newUrl = generateSvgFallback(formData.title, formData.author, current.id, current.styleName);
+        newUrl = fallback;
       } else {
-        newUrl = getAiImageUrl(current.prompt, newSeed, 768, 1088, settings.apiKey, settings.provider);
+        newUrl = getAiImageUrl(current.prompt, newSeed, 500, 750, settings.apiKey, settings.provider);
       }
 
       await new Promise(r => setTimeout(r, 600));
@@ -163,7 +168,8 @@ export function App() {
         next[index] = {
           ...next[index],
           seed: newSeed,
-          imageUrl: newUrl
+          imageUrl: newUrl,
+          fallbackUrl: fallback
         };
         return next;
       });
@@ -193,6 +199,7 @@ export function App() {
 
     const generated = generateAlternativeVariants(updated);
     const withImages = generated.map((v, i) => {
+      const fallback = generateSvgFallback(updated.title, updated.author, v.id, v.title);
       const img = i === 0 
         ? preset.mockImages.minimalist 
         : i === 1 
@@ -200,7 +207,8 @@ export function App() {
           : preset.mockImages.conceptual;
       return {
         ...v,
-        imageUrl: img || getAiImageUrl(v.prompt, v.seed)
+        imageUrl: img || fallback,
+        fallbackUrl: fallback
       };
     });
 

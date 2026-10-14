@@ -148,6 +148,7 @@ export function SpreadLayout({
               <img
                 src={coverImage}
                 alt={bookData.title}
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];

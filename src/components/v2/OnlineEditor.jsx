@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Type, 
   Sliders, 
@@ -16,8 +16,8 @@ import { downloadCoverAsPng } from '../../utils/canvasExport';
 import { DEFAULT_FALLBACK_IMAGES } from '../../services/aiService';
 
 export function OnlineEditor({ bookData, variant, onSaveEdits }) {
-  const [titleText, setTitleText] = useState(bookData.title || 'ZAMON');
-  const [authorText, setAuthorText] = useState(bookData.author || 'A. Karimov');
+  const [titleText, setTitleText] = useState(bookData?.title || 'ZAMON');
+  const [authorText, setAuthorText] = useState(bookData?.author || 'A. Karimov');
   const [fontFamily, setFontFamily] = useState('Playfair Display');
   const [fontSize, setFontSize] = useState(32);
   const [textColor, setTextColor] = useState('#ffffff');
@@ -31,6 +31,45 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
   const [saturation, setSaturation] = useState(100);
 
   const [appliedNotification, setAppliedNotification] = useState(false);
+
+  // Yuqori formadagi o'zgarishlar bilan darhol avtomatik sinxronlash
+  useEffect(() => {
+    if (bookData?.title !== undefined) {
+      setTitleText(bookData.title);
+    }
+  }, [bookData?.title]);
+
+  useEffect(() => {
+    if (bookData?.author !== undefined) {
+      setAuthorText(bookData.author);
+    }
+  }, [bookData?.author]);
+
+  const handleTitleChange = (val) => {
+    setTitleText(val);
+    if (onSaveEdits) {
+      onSaveEdits({
+        title: val,
+        author: authorText,
+        brightness,
+        contrast,
+        saturation
+      });
+    }
+  };
+
+  const handleAuthorChange = (val) => {
+    setAuthorText(val);
+    if (onSaveEdits) {
+      onSaveEdits({
+        title: titleText,
+        author: val,
+        brightness,
+        contrast,
+        saturation
+      });
+    }
+  };
 
   const handleApplyChanges = () => {
     setAppliedNotification(true);
@@ -53,7 +92,11 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
   };
 
   const handleDownload = () => {
-    downloadCoverAsPng({ ...bookData, title: titleText, author: authorText }, variant, variant.imageUrl);
+    downloadCoverAsPng(
+      { ...bookData, title: titleText, author: authorText },
+      variant,
+      variant?.imageUrl || variant?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]
+    );
   };
 
   return (
@@ -183,7 +226,7 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
               <input
                 type="text"
                 value={titleText}
-                onChange={(e) => setTitleText(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 font-semibold focus:outline-none focus:border-indigo-600"
               />
             </div>
@@ -195,7 +238,7 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
               <input
                 type="text"
                 value={authorText}
-                onChange={(e) => setAuthorText(e.target.value)}
+                onChange={(e) => handleAuthorChange(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-xs text-slate-900 focus:outline-none focus:border-indigo-600"
               />
             </div>

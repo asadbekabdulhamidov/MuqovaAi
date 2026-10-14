@@ -217,11 +217,12 @@ export function AlternativesViewer({
               >
                 {/* Artwork */}
                 <img
-                  src={activeVariant.imageUrl}
+                  src={activeVariant.imageUrl || activeVariant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length]}
                   alt={bookData.title}
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.currentTarget.onerror = null;
-                    e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length];
+                    e.currentTarget.src = activeVariant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[activeVariantIndex % DEFAULT_FALLBACK_IMAGES.length];
                   }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />

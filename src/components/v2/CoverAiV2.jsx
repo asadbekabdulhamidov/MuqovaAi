@@ -71,7 +71,7 @@ export function CoverAiV2({
   };
 
   const handleDownload = (variant) => {
-    downloadCoverAsPng(formData, variant, variant.imageUrl);
+    downloadCoverAsPng(formData, variant, variant.imageUrl || variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]);
   };
 
   return (
@@ -458,11 +458,12 @@ export function CoverAiV2({
                 {/* 2:3 Vertical Cover Artwork */}
                 <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden bg-slate-900 border border-slate-200 group">
                   <img
-                    src={variant.imageUrl}
+                    src={variant.imageUrl || variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length]}
                     alt={formData.title}
+                    referrerPolicy="no-referrer"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
-                      e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
+                      e.currentTarget.src = variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[index % DEFAULT_FALLBACK_IMAGES.length];
                     }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -543,11 +544,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[0]?.imageUrl || DEFAULT_FALLBACK_IMAGES[0]}
+                src={variants[0]?.imageUrl || variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]}
                 alt="Variant 1"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[0];
+                  e.currentTarget.src = variants[0]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0];
                 }}
                 className="w-full h-full object-cover"
               />
@@ -583,11 +585,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[1]?.imageUrl || DEFAULT_FALLBACK_IMAGES[1]}
+                src={variants[1]?.imageUrl || variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1]}
                 alt="Variant 2"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[1];
+                  e.currentTarget.src = variants[1]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[1];
                 }}
                 className="w-full h-full object-cover"
               />
@@ -623,11 +626,12 @@ export function CoverAiV2({
 
             <div className="aspect-[2/3] w-full max-w-[180px] mx-auto rounded-xl overflow-hidden shadow-sm border border-slate-200">
               <img
-                src={variants[2]?.imageUrl || DEFAULT_FALLBACK_IMAGES[2]}
+                src={variants[2]?.imageUrl || variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2]}
                 alt="Variant 3"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = DEFAULT_FALLBACK_IMAGES[2];
+                  e.currentTarget.src = variants[2]?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[2];
                 }}
                 className="w-full h-full object-cover"
               />

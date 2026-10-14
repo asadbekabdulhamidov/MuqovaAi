@@ -93,6 +93,7 @@ export function Book3DMockup({
             <img
               src={coverImage}
               alt={bookData.title}
+              referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.onerror = null;
