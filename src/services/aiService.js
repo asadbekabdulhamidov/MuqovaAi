@@ -240,7 +240,8 @@ export async function generateOpenAiImage(prompt, apiKey) {
     throw new Error("OpenAI API kaliti kiritilmagan. Iltimos, Sozlamalar darchasida kalitingizni kiriting.");
   }
 
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
+  // 1-urinish: DALL-E 3 (1024x1792 vertikal ultra sifat)
+  let response = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -255,10 +256,32 @@ export async function generateOpenAiImage(prompt, apiKey) {
     })
   });
 
-  const data = await response.json();
+  let data = await response.json();
+
+  // Agar akkauntda DALL-E 3 yoqilmagan bo'lsa, DALL-E 2 orqali sinab ko'ramiz
+  if (!response.ok && (data?.error?.message?.includes('dall-e-3') || data?.error?.message?.includes('does not exist'))) {
+    console.warn("DALL-E 3 modeli mavjud emas, DALL-E 2 orqali sinab ko'rilmoqda...");
+    response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey.trim()}`
+      },
+      body: JSON.stringify({
+        model: 'dall-e-2',
+        prompt: prompt.trim().slice(0, 1000),
+        n: 1,
+        size: '1024x1024'
+      })
+    });
+    data = await response.json();
+  }
 
   if (!response.ok) {
-    const errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
+    let errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
+    if (errorMsg.includes('does not exist') || errorMsg.includes('billing') || errorMsg.includes('quota') || response.status === 400 || response.status === 429) {
+      errorMsg = `${errorMsg}\n\n💡 SABABI: OpenAI hisobingizda mablag' (Credit Balance) $0.00 bo'lishi mumkin. OpenAI rasmiy qoidasiga ko'ra, rasm neyrotarmoqlarini ishlatish uchun platform.openai.com/billing sahifasida hisobingizga kamida $5 to'ldirilgan (Tier 1) bo'lishi shart.`;
+    }
     throw new Error(errorMsg);
   }
 
