@@ -111,13 +111,18 @@ export function App() {
 
       setGenerationStep('4/4: Neyrotarmoq orqali muqova kompozitsiyalari sintezlanmoqda...');
 
-      const variantsWithImages = newVariants.map((v) => {
+      // AI so'rovlarini parallel emas, ketma-ket (staggered) yuboramiz.
+      // Sababi: Bepul neyrotarmoq (Pollinations AI) bir vaqtda 3 ta so'rov kelganda 402 rate-limit beradi.
+      const initialWithFallbacks = newVariants.map((v, i) => {
         const fallback = generateSvgFallback(dataToUse.title, dataToUse.author, v.id, v.title);
         let url;
         if (settings.provider === 'offline') {
           url = fallback;
         } else {
-          url = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
+          // Variant A darhol AI dan so'raladi
+          url = i === 0 
+            ? getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider)
+            : fallback;
         }
         return {
           ...v,
@@ -126,9 +131,39 @@ export function App() {
         };
       });
 
-      await new Promise(r => setTimeout(r, 500));
-      setVariants(variantsWithImages);
+      setVariants(initialWithFallbacks);
       setActiveVariantIndex(0);
+
+      // Agar online rejimda bo'lsa:
+      // Variant B ni 4.5 soniyadan so'ng AI dan chaqiramiz
+      if (settings.provider !== 'offline' && newVariants.length > 1) {
+        setTimeout(() => {
+          setVariants(prev => {
+            if (!prev[1]) return prev;
+            const updated = [...prev];
+            updated[1] = {
+              ...updated[1],
+              imageUrl: getAiImageUrl(updated[1].prompt, updated[1].seed, 500, 750, settings.apiKey, settings.provider)
+            };
+            return updated;
+          });
+        }, 4500);
+      }
+
+      // Variant C ni 9 soniyadan so'ng AI dan chaqiramiz
+      if (settings.provider !== 'offline' && newVariants.length > 2) {
+        setTimeout(() => {
+          setVariants(prev => {
+            if (!prev[2]) return prev;
+            const updated = [...prev];
+            updated[2] = {
+              ...updated[2],
+              imageUrl: getAiImageUrl(updated[2].prompt, updated[2].seed, 500, 750, settings.apiKey, settings.provider)
+            };
+            return updated;
+          });
+        }, 9000);
+      }
 
       if (designMode === 'v1') {
         setActiveTab('alternatives');
