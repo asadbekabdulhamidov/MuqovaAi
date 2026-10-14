@@ -95,7 +95,18 @@ export function OnlineEditor({ bookData, variant, onSaveEdits }) {
     downloadCoverAsPng(
       { ...bookData, title: titleText, author: authorText },
       variant,
-      variant?.imageUrl || variant?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]
+      variant?.imageUrl || variant?.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0],
+      {
+        fontFamily,
+        fontSize,
+        textColor,
+        textAlign,
+        isBold,
+        isItalic,
+        brightness,
+        contrast,
+        saturation
+      }
     );
   };
 

@@ -55,65 +55,106 @@ async function fallbackDirectDownload(imageUrl, bookData, variant) {
     console.warn('Fallback direct download network error, generating clean vector SVG blob', e);
   }
 
-  // Eng oxirgi 100% kafolat: mahalliy SVG ni Blob qilib yuklash
+  // Eng oxirgi 100% kafolat: ayni shu variant (A, B yoki C) ning SVG sini Blob qilib yuklash
   try {
-    const svgData = generateSvgFallback(
+    const variantId = variant?.id || 'variant_a';
+    const svgData = variant?.fallbackUrl || generateSvgFallback(
       bookData?.title || 'Kitob Nomi',
       bookData?.author || 'Muallif',
-      variant?.id || 'variant_a',
+      variantId,
       variant?.title || 'Muqobil Variant'
     );
     const resp = await fetch(svgData);
     const blob = await resp.blob();
-    triggerBlobDownload(blob, `${safeTitle}_muqova.svg`);
+    triggerBlobDownload(blob, `${safeTitle}_muqova_${variantId}.svg`);
   } catch (finalErr) {
     console.error('Final download fallback failed:', finalErr);
   }
 }
 
 /**
- * Muqovani yuqori aniqlikda (PNG Blob) eksport qilish
- * Canvas tainting xatosini oldini olish uchun tasvirni Blob orqali xavfsiz chizadi.
+ * Muqovani yuqori aniqlikda (PNG) eksport qilish
+ * Foydalanuvchi ko'rib turgan variant ranglari va dizayniga 100% mos keladi.
  */
-export async function downloadCoverAsPng(bookData, variant, imageUrl) {
+export async function downloadCoverAsPng(bookData, variant, imageUrl, editorOptions = null) {
   try {
     const width = 1200;
-    const height = 1700;
+    const height = 1800; // 2:3 nisbat
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
 
-    // 1. Asosiy fon
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
+    const variantId = variant?.id || 'variant_a';
+    const isSvgDataUri = imageUrl && imageUrl.startsWith('data:image/svg+xml');
+
+    // =========================================================================
+    // 1-HOLAT: Agar rasm SVG bo'lsa va Online Editor matnlari tahrirlanmagan bo'lsa:
+    // Bu foydalanuvchi ko'rib turgan A, B yoki C variantning o'zi (masalan, qizil C variant).
+    // Aynan o'sha SVG ni to'liq canvasga chizib, 100% bir xil PNG qilib beramiz.
+    // =========================================================================
+    if (isSvgDataUri && !editorOptions) {
+      const svgImg = new Image();
+      let loaded = false;
+      await new Promise((resolve) => {
+        svgImg.onload = () => { loaded = true; resolve(); };
+        svgImg.onerror = () => { loaded = false; resolve(); };
+        svgImg.src = imageUrl;
+      });
+
+      if (loaded) {
+        ctx.drawImage(svgImg, 0, 0, width, height);
+        const safeTitle = (bookData?.title || 'kitob').replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
+        const filename = `${safeTitle}_muqova_${variantId}.png`;
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            triggerBlobDownload(blob, filename);
+          } else {
+            fallbackDirectDownload(imageUrl, bookData, variant);
+          }
+        }, 'image/png');
+        return;
+      }
+    }
+
+    // =========================================================================
+    // 2-HOLAT: Agar AI Bitmap rasm bo'lsa yoki Online Editordan yuklanayotgan bo'lsa:
+    // Variant uslubi (A=ko'k, B=binafsha, C=qizil) ga to'liq mos rang palitrasi
+    // =========================================================================
+    const variantPalettes = {
+      variant_a: {
+        bg1: '#0f172a',
+        bg2: '#1e3a8a',
+        accent: '#38bdf8',
+        badgeBg: 'rgba(37, 99, 235, 0.75)',
+        subColor: '#93c5fd'
+      },
+      variant_b: {
+        bg1: '#2e1065',
+        bg2: '#581c87',
+        accent: '#c084fc',
+        badgeBg: 'rgba(147, 51, 234, 0.75)',
+        subColor: '#e9d5ff'
+      },
+      variant_c: {
+        bg1: '#450a0a',
+        bg2: '#881337',
+        accent: '#fb7185',
+        badgeBg: 'rgba(225, 29, 72, 0.75)',
+        subColor: '#fecdd3'
+      }
+    };
+    const p = variantPalettes[variantId] || variantPalettes.variant_a;
 
     let imgElement = null;
-    const isDataUri = imageUrl && imageUrl.startsWith('data:');
 
-    if (isDataUri) {
-      try {
-        const svgImg = new Image();
-        await new Promise((resolve) => {
-          svgImg.onload = resolve;
-          svgImg.onerror = resolve;
-          svgImg.src = imageUrl;
-        });
-        if (svgImg.complete && svgImg.naturalWidth > 0) {
-          imgElement = svgImg;
-        }
-      } catch (e) {
-        console.warn('SVG data-uri render warning', e);
-      }
-    } else if (imageUrl) {
-      // Tashqi URL (Pollinations yoki Unsplash):
-      // Brauzer keshidagi tainting xatoliklarini oldini olish uchun
-      // tasvirni avval xavfsiz Blob ko'rinishida olamiz
+    if (imageUrl && !imageUrl.startsWith('data:')) {
+      // Tashqi URL (Pollinations yoki Unsplash)
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
-
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
         const response = await fetch(imageUrl, {
           mode: 'cors',
           cache: 'default',
@@ -126,112 +167,147 @@ export async function downloadCoverAsPng(bookData, variant, imageUrl) {
           const localBlobUrl = URL.createObjectURL(blob);
           const blobImg = new Image();
           await new Promise((resolve) => {
-            blobImg.onload = () => {
-              imgElement = blobImg;
-              resolve();
-            };
+            blobImg.onload = () => { imgElement = blobImg; resolve(); };
             blobImg.onerror = resolve;
             blobImg.src = localBlobUrl;
           });
           setTimeout(() => URL.revokeObjectURL(localBlobUrl), 2000);
         }
-      } catch (fetchErr) {
-        console.warn('Could not fetch external image with CORS, fallback to vector canvas', fetchErr);
+      } catch (e) {
+        console.warn('Could not fetch external image, using variant theme canvas', e);
       }
+    } else if (imageUrl && imageUrl.startsWith('data:')) {
+      const svgImg = new Image();
+      await new Promise((resolve) => {
+        svgImg.onload = () => { imgElement = svgImg; resolve(); };
+        svgImg.onerror = resolve;
+        svgImg.src = imageUrl;
+      });
     }
 
-    // 2. Fon tasvirini chizish
+    // A. Fon va rasmni chizish (Online Editor filtrlari bilan birga)
+    if (editorOptions && (editorOptions.brightness !== 100 || editorOptions.contrast !== 100 || editorOptions.saturation !== 100)) {
+      ctx.filter = `brightness(${editorOptions.brightness}%) contrast(${editorOptions.contrast}%) saturate(${editorOptions.saturation}%)`;
+    }
+
     if (imgElement) {
       ctx.drawImage(imgElement, 0, 0, width, height);
     } else {
-      // Chiroyli gradient va naqshli fon
+      // Variant rangiga mos gradient fon
       const grad = ctx.createLinearGradient(0, 0, width, height);
-      grad.addColorStop(0, '#0f172a');
-      grad.addColorStop(0.5, '#1e1b4b');
-      grad.addColorStop(1, '#312e81');
+      grad.addColorStop(0, p.bg1);
+      grad.addColorStop(0.5, p.bg2);
+      grad.addColorStop(1, '#020617');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
       // Radial yorug'lik nuri
       const radial = ctx.createRadialGradient(width / 2, height / 2.5, 50, width / 2, height / 2.5, 500);
-      radial.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
-      radial.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      radial.addColorStop(0, p.accent + '44');
+      radial.addColorStop(1, p.bg1 + '00');
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, width, height);
     }
 
-    // 3. Qoraytiruvchi gradient qatlam (matnlar o'qilishi uchun)
+    ctx.filter = 'none'; // filtrni tiklash
+
+    // B. Qoraytiruvchi gradient qatlam (matnlar aniq ko'rinishi uchun)
     const overlayGrad = ctx.createLinearGradient(0, 0, 0, height);
-    overlayGrad.addColorStop(0, 'rgba(0,0,0,0.7)');
+    overlayGrad.addColorStop(0, 'rgba(0,0,0,0.75)');
     overlayGrad.addColorStop(0.3, 'rgba(0,0,0,0.2)');
-    overlayGrad.addColorStop(0.7, 'rgba(0,0,0,0.3)');
-    overlayGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
+    overlayGrad.addColorStop(0.65, 'rgba(0,0,0,0.3)');
+    overlayGrad.addColorStop(1, 'rgba(0,0,0,0.9)');
     ctx.fillStyle = overlayGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // 4. Dekorativ ramkalar
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    // C. Dekorativ ramkalar
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 4;
-    ctx.strokeRect(60, 60, width - 120, height - 120);
+    ctx.strokeRect(50, 50, width - 100, height - 100);
 
-    // 5. Nashr belgisi (Badge)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    // D. Nashr nishoni (Badge)
+    ctx.fillStyle = p.badgeBg;
     ctx.beginPath();
-    ctx.roundRect(100, 100, 260, 50, 10);
+    ctx.roundRect(width / 2 - 140, 90, 280, 52, 26);
     ctx.fill();
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText((bookData?.edition || '1-nashr').toUpperCase(), 120, 133);
+    ctx.textAlign = 'center';
+    ctx.fillText((bookData?.edition || '1-NASHRI').toUpperCase(), width / 2, 123);
 
-    // 6. Muallif
-    ctx.fillStyle = '#fde68a';
-    ctx.font = 'bold 36px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText((bookData?.author || 'Muallif').toUpperCase(), 100, 220);
+    // E. Sarlavha (Kitob nomi)
+    const title = bookData?.title || 'Kitob Nomi';
+    const author = bookData?.author || 'Muallif';
 
-    // 7. Sarlavha (Title)
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 72px "Playfair Display", Georgia, serif';
-    
-    const words = (bookData?.title || 'Kitob Nomi').split(' ');
+    const fontFamily = editorOptions?.fontFamily || 'Playfair Display, Georgia, serif';
+    const fontSize = editorOptions?.fontSize ? editorOptions.fontSize * 2 : 68;
+    const textColor = editorOptions?.textColor || '#ffffff';
+    const textAlign = editorOptions?.textAlign || 'center';
+    const isBold = editorOptions?.isBold ?? true;
+    const isItalic = editorOptions?.isItalic ?? false;
+
+    ctx.fillStyle = textColor;
+    ctx.font = `${isItalic ? 'italic ' : ''}${isBold ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+    ctx.textAlign = textAlign;
+
+    let textX = width / 2;
+    if (textAlign === 'left') textX = 120;
+    if (textAlign === 'right') textX = width - 120;
+
+    const words = title.split(' ');
     let line = '';
-    let y = height - 420;
-    const maxWidth = width - 240;
+    const lines = [];
+    const maxTextWidth = width - 240;
 
     for (let n = 0; n < words.length; n++) {
       const testLine = line + words[n] + ' ';
       const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line, 100, y);
+      if (metrics.width > maxTextWidth && n > 0) {
+        lines.push(line.trim());
         line = words[n] + ' ';
-        y += 85;
       } else {
         line = testLine;
       }
     }
-    ctx.fillText(line, 100, y);
+    lines.push(line.trim());
 
-    // Oltin chiziq
-    ctx.fillStyle = '#fbbf24';
-    ctx.fillRect(100, y + 25, 140, 6);
+    const lineHeight = fontSize * 1.25;
+    const totalTextHeight = lines.length * lineHeight;
+    const startY = (height / 2) - (totalTextHeight / 2) + 40;
 
-    // 8. Qisqacha annotatsiya
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = '24px "Plus Jakarta Sans", sans-serif';
-    const synWords = (bookData?.synopsis || '').slice(0, 140);
-    if (synWords) {
-      ctx.fillText(synWords + '...', 100, y + 75);
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], textX, startY + (i * lineHeight));
     }
 
-    // 9. Pastki ma'lumotlar
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.font = '20px monospace';
-    ctx.fillText(`FORMAT: ${(bookData?.format || 'A5').toUpperCase()} | BOSMAXONA: 300 DPI`, 100, height - 100);
-    ctx.fillText(`AI MUQOBIL DIZAYN TIZIMI`, width - 420, height - 100);
+    // F. Aktsent chiziqcha
+    ctx.fillStyle = p.accent;
+    const lineY = startY + (lines.length * lineHeight) + 20;
+    if (textAlign === 'center') {
+      ctx.fillRect(width / 2 - 70, lineY, 140, 6);
+    } else if (textAlign === 'left') {
+      ctx.fillRect(120, lineY, 140, 6);
+    } else {
+      ctx.fillRect(width - 260, lineY, 140, 6);
+    }
 
-    // 10. Xavfsiz PNG Blob orqali yuklab olish
+    // G. Muallif
+    ctx.fillStyle = p.subColor;
+    ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = textAlign;
+    ctx.fillText(author.toUpperCase(), textX, lineY + 60);
+
+    // H. Pastki ma'lumotlar
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '22px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`FORMAT: ${(bookData?.format || 'A5').toUpperCase()} • 300 DPI`, 100, height - 90);
+    ctx.textAlign = 'right';
+    ctx.fillText(`AI MUQOBIL DIZAYN TIZIMI`, width - 100, height - 90);
+
+    // I. Xavfsiz PNG Blob yuklab olish
     const safeTitle = (bookData?.title || 'kitob').replace(/[^a-zA-Z0-9_\u0400-\u04FF]/g, '_');
-    const filename = `${safeTitle}_muqova_${variant?.id || 'dizayn'}.png`;
+    const filename = `${safeTitle}_muqova_${variantId}.png`;
 
     canvas.toBlob((blob) => {
       if (blob) {

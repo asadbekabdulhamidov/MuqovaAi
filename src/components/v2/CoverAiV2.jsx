@@ -71,7 +71,7 @@ export function CoverAiV2({
   };
 
   const handleDownload = (variant) => {
-    downloadCoverAsPng(formData, variant, variant.imageUrl || variant.fallbackUrl || DEFAULT_FALLBACK_IMAGES[0]);
+    downloadCoverAsPng(formData, variant, variant.imageUrl || variant.fallbackUrl);
   };
 
   return (
