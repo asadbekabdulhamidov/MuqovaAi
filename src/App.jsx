@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { BookForm } from './components/BookForm';
 import { AlternativesViewer } from './components/AlternativesViewer';
-import { ResearchSection } from './components/ResearchSection';
+import { CoverAiV2 } from './components/v2/CoverAiV2';
 import { ApiSettingsModal } from './components/ApiSettingsModal';
 import { 
   SHOWCASE_PRESETS, 
@@ -28,6 +28,17 @@ import {
 } from 'lucide-react';
 
 export function App() {
+  // Dizayn rejimi: 'v2' (Yorug' CoverAI) yoki 'v1' (Dark MuqovaAI)
+  const [designMode, setDesignMode] = useState(() => {
+    const saved = localStorage.getItem('coverai_design_mode');
+    return saved || 'v2'; // Standart holatda V2 (mijoz xohlagan yorug' rejim)
+  });
+
+  const handleSetDesignMode = (mode) => {
+    setDesignMode(mode);
+    localStorage.setItem('coverai_design_mode', mode);
+  };
+
   // Boshlang'ich qiymat sifatida 1-namunadan foydalanamiz
   const defaultPreset = SHOWCASE_PRESETS[0];
 
@@ -51,7 +62,7 @@ export function App() {
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('generator'); // 'generator' | 'alternatives' | 'research'
+  const [activeTab, setActiveTab] = useState('generator'); // 'generator' | 'alternatives'
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState('');
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -115,9 +126,14 @@ export function App() {
       setVariants(variantsWithImages);
       setActiveVariantIndex(0);
 
-      // Natijalarni ko'rish uchun avtomatik "Muqobil Variantlar" tabiga o'tkazamiz!
-      setActiveTab('alternatives');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (designMode === 'v1') {
+        setActiveTab('alternatives');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // V2 da natijalar bo'limiga silliq tushiramiz
+        const el = document.getElementById('v2-editor-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
     } catch (err) {
       console.error('Generatsiya xatosi:', err);
     } finally {
@@ -191,9 +207,13 @@ export function App() {
     setVariants(withImages);
     setActiveVariantIndex(0);
 
-    // Namuna tanlanganda darhol natijalar vitrinasiga o'tamiz
-    setActiveTab('alternatives');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (designMode === 'v1') {
+      setActiveTab('alternatives');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const el = document.getElementById('v2-create-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   // Yangi bo'sh forma boshlash
@@ -215,9 +235,13 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isV2 = designMode === 'v2';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#090d16] text-slate-100 font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Yuqori navigatsiya paneli */}
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      isV2 ? 'bg-[#f8fafc] text-slate-800' : 'bg-[#090d16] text-slate-100 selection:bg-indigo-500 selection:text-white'
+    }`}>
+      {/* Yuqori navigatsiya paneli (V1/V2 tugmasi bilan) */}
       <Navbar
         onOpenSettings={() => setIsSettingsOpen(true)}
         activeTab={activeTab}
@@ -225,151 +249,133 @@ export function App() {
           setActiveTab(tab);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        designMode={designMode}
+        setDesignMode={handleSetDesignMode}
       />
 
       <main className="flex-1 pb-16">
         {/* ========================================================
-            TAB 1: AI GENERATOR (Forma va Tayyor Namunalar)
+            REJIM 2: V2 COVERAI LIGHT MODE (Mijozning skrinshotidagi dizayn)
         ======================================================== */}
-        {activeTab === 'generator' && (
-          <div className="space-y-6 sm:space-y-10">
-            {/* Hero & Presets Section */}
-            <HeroSection
-              onSelectPreset={handleSelectPreset}
-              onStartNew={handleStartNew}
-              onStartCreate={() => {
-                const el = document.getElementById('generator-form-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
+        {isV2 ? (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+            <CoverAiV2
+              formData={formData}
+              setFormData={setFormData}
+              variants={variants}
+              activeVariantIndex={activeVariantIndex}
+              setActiveVariantIndex={setActiveVariantIndex}
+              onGenerate={() => handleGenerate()}
+              isGenerating={isGenerating}
+              generationStep={generationStep}
+              onRegenerateVariant={handleRegenerateVariant}
+              isRegenerating={isRegenerating}
             />
-
-            <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 space-y-6">
-              {/* Kitob ma'lumotlarini kiritish formasi */}
-              <div id="generator-form-section">
-                <BookForm
-                  formData={formData}
-                  setFormData={setFormData}
-                  onGenerate={() => handleGenerate()}
-                  isGenerating={isGenerating}
-                  generationStep={generationStep}
+          </div>
+        ) : (
+          /* ========================================================
+              REJIM 1: V1 DARK MODE (Oldingi to'q rejim)
+          ======================================================== */
+          <div className="space-y-6 sm:space-y-10">
+            {activeTab === 'generator' && (
+              <>
+                <HeroSection
+                  onSelectPreset={handleSelectPreset}
+                  onStartNew={handleStartNew}
+                  onStartCreate={() => {
+                    const el = document.getElementById('generator-form-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
                 />
-              </div>
 
-              {/* Variantlarga o'tish tugmasi */}
-              {variants.length > 0 && (
-                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-400" />
-                      Mavjud muqobil variantlar tayyor ({variants.length} ta dizayn)
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      «{formData.title || 'Kitob'}» uchun yaratilgan 3D mockup va bosmaxona yoyilmalarini ko‘rish
-                    </p>
+                <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 space-y-6">
+                  <div id="generator-form-section">
+                    <BookForm
+                      formData={formData}
+                      setFormData={setFormData}
+                      onGenerate={() => handleGenerate()}
+                      isGenerating={isGenerating}
+                      generationStep={generationStep}
+                    />
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setActiveTab('alternatives');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-indigo-600/20"
-                  >
-                    <span>Muqobil Variantlarni Ko‘rish</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  {variants.length > 0 && (
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-400" />
+                          Mavjud muqobil variantlar tayyor ({variants.length} ta dizayn)
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          «{formData.title || 'Kitob'}» uchun yaratilgan 3D mockup va bosmaxona yoyilmalarini ko‘rish
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setActiveTab('alternatives');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-indigo-600/80 hover:bg-indigo-600 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-indigo-600/20"
+                      >
+                        <span>Muqobil Variantlarni Ko‘rish</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </>
+            )}
 
-        {/* ========================================================
-            TAB 2: MUQOBIL VARIANTLAR (Faqat Natijalar Vitrinasi)
-        ======================================================== */}
-        {activeTab === 'alternatives' && (
-          <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-5">
-            {/* Context Status Bar */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 uppercase tracking-wider">
-                    Faol Loyiha
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    {(formData.format || 'A5').toUpperCase()} • {formData.pages} bet
-                  </span>
+            {activeTab === 'alternatives' && (
+              <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-5">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 uppercase tracking-wider">
+                        Faol Loyiha
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {(formData.format || 'A5').toUpperCase()} • {formData.pages} bet
+                      </span>
+                    </div>
+                    <h2 className="text-base sm:text-lg font-bold text-white truncate max-w-lg">
+                      «{formData.title || 'Kitob'}» — <span className="text-slate-300 font-normal">{formData.author}</span>
+                    </h2>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => {
+                        setActiveTab('generator');
+                        window.scrollTo({ top: 350, behavior: 'smooth' });
+                      }}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Parametrlarni Tahrirlash</span>
+                    </button>
+
+                    <button
+                      onClick={handleStartNew}
+                      className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/30 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>Yangi Kitob</span>
+                    </button>
+                  </div>
                 </div>
-                <h2 className="text-base sm:text-lg font-bold text-white truncate max-w-lg">
-                  «{formData.title || 'Kitob'}» — <span className="text-slate-300 font-normal">{formData.author}</span>
-                </h2>
+
+                <AlternativesViewer
+                  variants={variants}
+                  activeVariantIndex={activeVariantIndex}
+                  setActiveVariantIndex={setActiveVariantIndex}
+                  bookData={formData}
+                  onRegenerateVariant={handleRegenerateVariant}
+                  isRegenerating={isRegenerating}
+                />
               </div>
-
-              {/* Navigation Back / New Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    setActiveTab('generator');
-                    window.scrollTo({ top: 350, behavior: 'smooth' });
-                  }}
-                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center justify-center gap-1.5"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Parametrlarni Tahrirlash</span>
-                </button>
-
-                <button
-                  onClick={handleStartNew}
-                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-xs font-semibold text-indigo-300 hover:text-white border border-indigo-500/30 transition-all flex items-center justify-center gap-1.5"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Yangi Kitob</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Alternatives Viewer Component */}
-            <div id="alternatives-section">
-              <AlternativesViewer
-                variants={variants}
-                activeVariantIndex={activeVariantIndex}
-                setActiveVariantIndex={setActiveVariantIndex}
-                bookData={formData}
-                onRegenerateVariant={handleRegenerateVariant}
-                isRegenerating={isRegenerating}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================
-            TAB 3: ILMIY ASOS & TAHLIL (Prezentatsiya va Himoya)
-        ======================================================== */}
-        {activeTab === 'research' && (
-          <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 uppercase tracking-wider">
-                  Ilmiy Himoya & Prezentatsiya
-                </span>
-                <h2 className="text-base sm:text-lg font-bold text-white mt-1">
-                  Tadqiqot Metodologiyasi va Ekspert Bahosi
-                </h2>
-              </div>
-
-              <button
-                onClick={() => {
-                  setActiveTab('generator');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Generatorga Qaytish</span>
-              </button>
-            </div>
-
-            <ResearchSection />
+            )}
           </div>
         )}
       </main>
@@ -383,37 +389,49 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-8 text-xs text-slate-400">
+      <footer className={`border-t py-8 text-xs transition-colors duration-300 ${
+        isV2 
+          ? 'bg-white border-slate-200 text-slate-600' 
+          : 'bg-slate-950 border-slate-800/80 text-slate-400'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/30 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 shrink-0">
               <BookMarked className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-slate-200 font-bold block text-sm">
-                MuqovaAI — Intellektual Muqova Dizayn Tizimi
+              <span className={`font-bold block text-sm ${isV2 ? 'text-slate-900' : 'text-slate-200'}`}>
+                CoverAI — Sun’iy Intellekt Muqova Tizimi
               </span>
-              <p className="text-[11px] text-slate-500 max-w-md">
-                «Kitob muqovasini Muqobil dizayn variantlarini tavsiya qiluvchi AI tizimini ishlab chiqish va tadqiq qilish»
+              <p className={`text-[11px] max-w-md ${isV2 ? 'text-slate-500' : 'text-slate-400'}`}>
+                Kitob muqovasining muqobil dizayn variantlarini tavsiya qiluvchi AI tizimi
               </p>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-center sm:text-right">
-            <div className="bg-indigo-950/70 border border-indigo-800/60 px-4 py-2 rounded-xl flex items-center gap-2.5 shadow-lg shadow-indigo-950/50">
-              <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
+            <div className={`px-4 py-2 rounded-xl flex items-center gap-2.5 shadow-sm border ${
+              isV2
+                ? 'bg-slate-50 border-slate-200 shadow-slate-100'
+                : 'bg-indigo-950/70 border-indigo-800/60 shadow-indigo-950/50'
+            }`}>
+              <GraduationCap className={`w-4 h-4 shrink-0 ${isV2 ? 'text-indigo-600' : 'text-amber-400'}`} />
               <div className="text-left">
-                <span className="text-[10px] text-indigo-300 font-mono uppercase tracking-wider block font-semibold">
+                <span className={`text-[10px] font-mono uppercase tracking-wider block font-semibold ${
+                  isV2 ? 'text-indigo-600' : 'text-indigo-300'
+                }`}>
                   Tadqiqotchi & Loyiha Muallifi:
                 </span>
-                <span className="text-xs font-bold text-white tracking-wide">
+                <span className={`text-xs font-bold tracking-wide ${
+                  isV2 ? 'text-slate-900' : 'text-white'
+                }`}>
                   Anvarova Xurshidabonu Xamidillayevna
                 </span>
               </div>
             </div>
 
-            <div className="text-[11px] text-slate-500 font-mono">
-              <span>Ilmiy MVP • 2026</span>
+            <div className="text-[11px] text-slate-400 font-mono">
+              <span>{isV2 ? 'CoverAI v2.0 Light' : 'MuqovaAI v1.0 Dark'} • 2026</span>
             </div>
           </div>
         </div>
