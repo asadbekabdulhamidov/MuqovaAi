@@ -259,7 +259,27 @@ export async function generateOpenAiImage(prompt, apiKey) {
   const data = await response.json();
 
   if (!response.ok) {
-    const errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
+    let errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
+
+    // Agar model topilmadi desa, kalitning modellar ro'yxatini aniqlab ko'ramiz
+    try {
+      const modelsRes = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey.trim()}` }
+      });
+      if (modelsRes.ok) {
+        const modelsJson = await modelsRes.json();
+        const modelIds = (modelsJson.data || []).map(m => m.id);
+        const hasDalle3 = modelIds.some(id => id.includes('dall-e-3'));
+        console.log('OpenAI ruxsat etilgan modellar:', modelIds);
+
+        if (!hasDalle3) {
+          errorMsg = `OpenAI xatosi: Sizning kalitingizda hali DALL-E 3 modeli faollashmagan.\n\nOpenAI $5 to'lov qabul qilingandan so'ng, hisobni "Build" darajasiga ko'tarishi va DALL-E 3 ni butun tizim bo'ylab yoqishi uchun 10-15 daqiqa sinxronizatsiya vaqti ketishi mumkin.\n\nIltimos, OpenAI panelingizdagi chap menyudan "Limitlar" (Limits) bo'limini tekshirib ko'ring.`;
+        }
+      }
+    } catch (diagErr) {
+      console.warn('Model diagnostikasi xatosi:', diagErr);
+    }
+
     throw new Error(errorMsg);
   }
 
