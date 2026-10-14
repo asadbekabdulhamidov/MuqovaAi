@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookMarked, Settings2, Sun, Moon, Wand2, Sparkles } from 'lucide-react';
+import { BookMarked, Settings2, Sun, Moon, Wand2, Sparkles, Presentation } from 'lucide-react';
 
 export function Navbar({ 
   onOpenSettings, 
@@ -130,6 +130,22 @@ export function Navbar({
               </>
             )}
           </button>
+
+          {/* Slides / Taqdimot Button */}
+          <a
+            href="/slides.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all shadow-sm flex items-center gap-1.5 ${
+              isV2
+                ? 'bg-purple-50 hover:bg-purple-100/80 text-purple-700 border-purple-200'
+                : 'bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border-purple-800/60'
+            }`}
+            title="Loyiha taqdimoti (12 ta interaktiv slayd)"
+          >
+            <Presentation className="w-4 h-4 text-purple-600" />
+            <span className="hidden sm:inline font-bold">Taqdimot</span>
+          </a>
 
           {/* Settings Button */}
           <button
