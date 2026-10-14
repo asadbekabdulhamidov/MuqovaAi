@@ -231,3 +231,41 @@ export function getAiImageUrl(prompt, seed, width = 500, height = 750, apiKey = 
   const cleanPrompt = encodeURIComponent(prompt.trim());
   return `https://image.pollinations.ai/prompt/${cleanPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`;
 }
+
+/**
+ * OpenAI DALL-E 3 rasmiy API orqali ultra-aniq vertikal kitob muqovasini generatsiya qilish
+ */
+export async function generateOpenAiImage(prompt, apiKey) {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("OpenAI API kaliti kiritilmagan. Iltimos, Sozlamalar darchasida kalitingizni kiriting.");
+  }
+
+  const response = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey.trim()}`
+    },
+    body: JSON.stringify({
+      model: 'dall-e-3',
+      prompt: prompt.trim(),
+      n: 1,
+      size: '1024x1792', // Vertikal 9:16 kitob formati
+      quality: 'standard',
+      response_format: 'url'
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const errorMsg = data?.error?.message || `OpenAI server xatosi (${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  if (!data?.data?.[0]?.url) {
+    throw new Error("OpenAI tasvir manzilini qaytara olmadi.");
+  }
+
+  return data.data[0].url;
+}

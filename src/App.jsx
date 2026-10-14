@@ -15,7 +15,8 @@ import {
 import { 
   generateAlternativeVariants, 
   getAiImageUrl, 
-  generateSvgFallback 
+  generateSvgFallback,
+  generateOpenAiImage
 } from './services/aiService';
 import { 
   Sparkles, 
@@ -182,7 +183,15 @@ export function App() {
           const v = newVariants[i];
           let chosenUrl = v.fallbackUrl;
 
-          if (settings.provider === 'offline') {
+          if (settings.provider === 'openai') {
+            try {
+              chosenUrl = await generateOpenAiImage(v.prompt, settings.apiKey);
+            } catch (err) {
+              console.error('OpenAI DALL-E 3 xatosi:', err);
+              alert(`OpenAI xatosi: ${err.message}`);
+              chosenUrl = v.fallbackUrl;
+            }
+          } else if (settings.provider === 'offline') {
             chosenUrl = v.fallbackUrl;
           } else {
             const fluxUrl = getAiImageUrl(v.prompt, v.seed, 500, 750, settings.apiKey, settings.provider);
@@ -249,7 +258,15 @@ export function App() {
       const fallback = generateSvgFallback(formData.title, formData.author, current.id, current.title);
       let newUrl = fallback;
 
-      if (settings.provider !== 'offline') {
+      if (settings.provider === 'openai') {
+        try {
+          newUrl = await generateOpenAiImage(current.prompt, settings.apiKey);
+        } catch (err) {
+          console.error('OpenAI DALL-E 3 qayta generatsiya xatosi:', err);
+          alert(`OpenAI xatosi: ${err.message}`);
+          newUrl = fallback;
+        }
+      } else if (settings.provider !== 'offline') {
         const fluxUrl = getAiImageUrl(current.prompt, newSeed, 500, 750, settings.apiKey, settings.provider);
         const isFluxSuccess = await preloadImageWithTimeout(fluxUrl, 25000);
         if (isFluxSuccess) {
